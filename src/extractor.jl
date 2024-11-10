@@ -146,7 +146,7 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
     results = map(all_relevant_tiles) do tile_idx
         tile_ranges = tile_to_ranges(tiling_scheme, tile_idx)
         tile_ranges = crop_ranges_to_array(array, tile_ranges)
-        tile = view(array, tile_ranges...)
+        tile = copy(view(array, tile_ranges...))
         state = TileState(
             tile, 
             tile_ranges, 
@@ -220,24 +220,24 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
         tile_ranges = tile_to_ranges(tiling_scheme, tile_idx)
         tile_ranges = crop_ranges_to_array(array, tile_ranges)
 
-        contained_indices = get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR)
-        shared_indices = get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR)
+        # contained_indices = get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR)
+        # shared_indices = get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR)
 
-        contained_ranges = view(ranges, contained_indices)
-        shared_ranges = view(ranges, shared_indices)
-        
-        contained_metadata = _nothing_or_view(metadata, contained_indices)
-        shared_metadata = _nothing_or_view(metadata, shared_indices)
+        # contained_ranges = view(ranges, contained_indices)
+        # shared_ranges = view(ranges, shared_indices)
+
+        # contained_metadata = _nothing_or_view(metadata, contained_indices)
+        # shared_metadata = _nothing_or_view(metadata, shared_indices)
 
         Threads.@spawn begin
-            tile = view($array, $tile_ranges...)
+            tile = copy(view($array, $tile_ranges...))
             state = TileState(
                 tile, 
-                $tile_ranges, 
-                $contained_indices, 
-                $shared_indices, 
-                $contained_metadata, 
-                $shared_metadata
+                tile_ranges, 
+                $(view(ranges, get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR))), 
+                $(view(ranges, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR))), 
+                $(_nothing_or_view(metadata, get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR))), 
+                $(_nothing_or_view(metadata, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR)))
             )
             contained_results, shared_results = op(state)
         end   
