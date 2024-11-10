@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(TiledExtractor, :DocTestSetup, :(using TiledExtractor); recu
 
 makedocs(;
     modules=[TiledExtractor],
-    authors="Anshul Singhvi <anshulsinghvi@gmail.com> and contributors",
+    authors="Anshul Singhvi <anshulsinghvi@gmail.com>, Alex Gardner <alex.s.gardner@jpl.nasa.gov>, and contributors",
     sitename="TiledExtractor.jl",
     format=Documenter.HTML(;
         canonical="https://asinghvi17.github.io/TiledExtractor.jl",
@@ -14,6 +14,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Developer Documentation" => "devdocs.md",
     ],
 )
 
