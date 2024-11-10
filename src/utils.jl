@@ -18,3 +18,28 @@ function crop_ranges_to_array(array::AbstractArray{T, N}, ranges::NTuple{N, <: A
         intersect(array_axes[i], ranges[i])
     end
 end
+
+"""
+    _nothing_or_view(x, idx)
+
+Return `view(x, idx)` if `x` is not nothing, otherwise return nothing.
+
+This is made so that we can have `metadata=nothing`, and have it still work with `broadcast`.
+"""
+function _nothing_or_view(x, idx)
+    isnothing(x) ? nothing : view(x, idx)
+end
+
+
+module Static
+    export True, False, StaticBool
+    abstract type StaticBool{value} end
+    struct True <: StaticBool{true} end
+    struct False <: StaticBool{false} end
+    function StaticBool(value::Bool)
+        value ? True() : False()
+    end
+    StaticBool(value::StaticBool) = value
+end
+
+using .Static
