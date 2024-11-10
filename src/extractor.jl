@@ -132,7 +132,7 @@ end
 function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
 
     if progress
-        prog = Progress(length(ranges), "Extracting...")
+        prog = Progress(length(ranges); desc = "Extracting...")
     end
 
     # for now, DO NOT CHANNELIZE/MULTITHREAD
@@ -211,7 +211,7 @@ end
 function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
 
     if progress
-        prog = Progress(length(ranges), "Extracting...")
+        prog = Progress(length(ranges); desc = "Extracting...")
     end
 
     # Split the ranges into their tiles.
