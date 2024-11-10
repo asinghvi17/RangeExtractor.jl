@@ -4,7 +4,7 @@ CurrentModule = TiledExtractor
 
 # TiledExtractor
 
-Documentation for [TiledExtractor](https://github.com/JuliaGeo/TiledExtractor.jl).
+Documentation for [TiledExtractor](https://github.com/asinghvi17/TiledExtractor.jl).
 
 ```@index
 ```

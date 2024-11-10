@@ -8,7 +8,7 @@ makedocs(;
     authors="Anshul Singhvi <anshulsinghvi@gmail.com> and contributors",
     sitename="TiledExtractor.jl",
     format=Documenter.HTML(;
-        canonical="https://JuliaGeo.github.io/TiledExtractor.jl",
+        canonical="https://asinghvi17.github.io/TiledExtractor.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaGeo/TiledExtractor.jl",
+    repo="github.com/asinghvi17/TiledExtractor.jl",
     devbranch="main",
 )
