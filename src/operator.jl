@@ -36,8 +36,8 @@ op = TileOperation((data, meta) -> mean(data))
 ```
 """
 struct TileOperation{C,S}
-    contained::C
-    shared::S
+    contained_func::C
+    shared_func::S
 end
 
 # Constructor for when the same operation should be used for both
