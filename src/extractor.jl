@@ -1,4 +1,130 @@
-function _extract(array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func)
+export extract
+
+"""
+    extract(array, ranges, metadata=nothing; operation::TileOperation, combine, tiling_scheme::TilingStrategy, threaded = true)
+
+Extract statistics from an array by tiling it into chunks and processing each chunk separately.
+
+This function splits the input array into tiles according to the provided tiling scheme, and processes each tile independently.
+For regions that are fully contained within a tile, the operation is applied directly. For regions that span multiple tiles,
+the partial results are combined using the provided combine function.
+
+# Arguments
+
+Mandatory positional arguments:
+- `array`: The input array to process
+- `ranges`: A vector of tuples of ranges specifying regions to process
+
+Mandatory keyword arguments:
+- `operation::TileOperation`: A TileOperation specifying how to process contained and shared regions
+- `combine`: Function to combine results from shared regions across tiles
+- `tiling_scheme::TilingStrategy`: Strategy for splitting the array into tiles
+
+Optional positional argument:
+- `metadata=nothing`: Optional metadata associated with each range
+(this is at the last position right before the keyword arguments)
+
+Optional keyword arguments:
+- `threaded=Static.True()`: Whether to process tiles in parallel
+
+# Examples
+
+Basic array operations:
+
+
+# Examples
+
+## Simple usage:
+
+```julia
+using TiledExtractor
+
+# Create a 2D array
+array = ones(20, 20)
+
+# Define ranges of interest
+ranges = [
+    (1:4, 1:4),
+    (9:20, 11:20),
+    (1:15, 11:20),
+    (11:20, 1:10)
+]
+
+# Define a tiling scheme (tiles of size 10x10)
+tiling_scheme = FixedGridTiling{2}(10)
+
+# Define the operation to perform on each tile
+op = TileOperation(
+    (x, meta) -> sum(x),  # For regions fully contained in a tile
+    (x, meta) -> sum(x)   # For regions that span multiple tiles
+)
+
+# Define a combine function for shared regions
+combine_func = sum
+
+# Extract the results
+results = extract(array, ranges; operation=op, combine=combine_func, tiling_scheme=tiling_scheme)
+
+println(results)  # Outputs the sums over the specified ranges
+```
+
+## With Rasters.jl
+
+Note that this example uses TiledExtractor directly.  In the near future we will integrate with Rasters.jl to allow cleaner syntax.
+
+```julia
+using TiledExtractor
+using Rasters, RasterDataSources
+using NaturalEarth  # For country geometries
+import GeoInterface  # For accessing extents of geometries
+
+# Load a raster dataset (e.g., WorldClim minimum temperature for January)
+ras = Raster(WorldClim{Climate}, :tmin, month=1)
+
+# Load country polygons from NaturalEarth at 1:10 million scale
+all_countries = naturalearth("admin_0_countries", 10)
+
+# Get the extents of each country geometry
+extents = GeoInterface.extent.(all_countries.geometry)
+
+# Convert extents to index ranges over the raster
+ranges = Rasters.dims2indices.((ras,), Touches.(extents))
+
+# Define the tiling scheme (tiles of size 100x100)
+tiling_scheme = FixedGridTiling{2}(100)
+
+# Define the operation to perform on each tile
+op = TileOperation(
+    # For regions fully contained in a tile
+    (x, meta) -> zonal(sum, x; of=meta, boundary=:touches, progress=false, threaded=false),
+    # For regions that span multiple tiles
+    (x, meta) -> zonal(sum, x; of=meta, boundary=:touches, progress=false, threaded=false)
+)
+
+# Define a combine function for shared regions
+combine_func = sum
+
+# Extract the zonal sums for each country
+results = extract(ras, ranges, all_countries.geometry; operation=op, combine=combine_func, tiling_scheme=tiling_scheme)
+
+# Compare to a non-tiled approach
+non_tiled_results = zonal(sum, ras; of=all_countries.geometry, boundary=:touches, progress=false, threaded=false)
+
+results ≈ non_tiled_results # true
+
+@show results
+```
+"""
+function extract(array, ranges, metadata=nothing; 
+    operation::TileOperation,
+    combine,  # Default to taking first result for shared regions
+    tiling_scheme::TilingStrategy,
+    threaded::Union{Bool, Static.StaticBool} = Static.True()
+)
+    _extract(Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine)
+end
+
+
 # Single-threaded extractor
 # Nothing complicated here.
 
