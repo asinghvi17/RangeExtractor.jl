@@ -1,13 +1,26 @@
 name = "TiledExtractor"
 uuid = "0151565a-6c01-463c-b553-c2b2e3b729c0"
-authors = ["Anshul Singhvi <anshulsinghvi@gmail.com> and contributors"]
+authors = ["Anshul Singhvi <anshulsinghvi@gmail.com>", "Alex Gardner <alex.s.gardner@jpl.nasa.gov>", "and contributors"]
 version = "0.1.0-DEV"
 
+[deps]
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+SortTileRecursiveTree = "746ee33f-1797-42c2-866d-db2fce69d14d"
+SpatialIndexing = "d4ead438-fe20-5cc5-a293-4fd39a41b74c"
+
 [compat]
+DocStringExtensions = "0.9"
+SortTileRecursiveTree = "0.1"
+SpatialIndexing = "0.1"
 julia = "1.10"
 
 [extras]
+ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
+NaturalEarth = "436b0209-26ab-4e65-94a9-6526d86fea76"
+OnlineStats = "a15396b6-48d5-5d58-9928-6d29437db91e"
+RasterDataSources = "3cb90ccd-e1b6-4867-9617-4276c8b2ca36"
+Rasters = "a3a2b9e3-a471-40c9-b274-f788e487c689"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["ArchGDAL", "NaturalEarth", "RasterDataSources", "Rasters", "Test"]
