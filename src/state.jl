@@ -3,7 +3,7 @@
 
 This struct holds all the state that is relevant to a single tile.
 
-It is the input to the [`TileOperator`](@ref), and is used to apply the operator to the tile.
+It is the input to the [`TileOperation`](@ref), and is used to apply the operator to the tile.
 =#
 
 """

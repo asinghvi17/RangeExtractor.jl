@@ -1,4 +1,4 @@
-function _extract(array, ranges, metadata, tiling_scheme, op::TileOperator, combine_func)
+function _extract(array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func)
     # for now, DO NOT CHANNELIZE/MULTITHREAD
     # simply run single threaded so we are confident of the state of the program
 

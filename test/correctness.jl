@@ -21,7 +21,7 @@ using Test
 
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperator((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
 
     @test results == [sum(view(array, r...)) for r in ranges]
@@ -37,7 +37,7 @@ end
 
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperator((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
     # NOTE: this has to be approximate, since the order of summation is different for the two
     # different approaches.
@@ -58,7 +58,7 @@ end
 
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperator((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
 
     @test results ≈ [sum(view(array, r...)) for r in ranges]
@@ -81,7 +81,7 @@ end
 
     tiling_scheme = FixedGridTiling{3}(5)
 
-    op = TiledExtractor.TileOperator((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results = TiledExtractor._extract(data, ranges, nothing, tiling_scheme, op, sum)
 
     @test results ≈ [sum(view(data, r...)) for r in ranges]
@@ -94,7 +94,7 @@ end
 
     zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches)
 
-    op = TiledExtractor.TileOperator((x, meta) -> zonal(sum, x, of=meta, boundary = :touches), (x, meta) -> zonal(sum, x, of=meta, boundary = :touches))
+    op = TiledExtractor.TileOperation((x, meta) -> zonal(sum, x, of=meta, boundary = :touches), (x, meta) -> zonal(sum, x, of=meta, boundary = :touches))
 
     extents = GI.extent.(all_countries.geometry)
     ranges = Rasters.DD.dims2indices.((ras,), Touches.(extents))

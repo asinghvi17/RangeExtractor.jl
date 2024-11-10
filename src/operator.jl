@@ -1,59 +1,62 @@
 #=
-# TileOperator
+# TileOperation
 
-The [`TileOperator`](@ref) is a type that holds two functions:
+The [`TileOperation`](@ref) is a type that holds two functions:
 - A function that is applied to the contained ranges of a tile
 - A function that is applied to the shared ranges of a tile
 
 The results from the contained and shared ranges are then combined to form the final result by the extractor, using its `combine_func`.
 
-A [`TileOperator`](@ref) is callable with a [`TileState`](@ref), and returns a tuple of the results from the contained and shared functions.    
+A [`TileOperation`](@ref) is callable with a [`TileState`](@ref), and returns a tuple of the results from the contained and shared functions.    
 
 =#
-
 """
-    TileOperator{ContainedFunc, SharedFunc}
-    (to::TileOperator)(tile, state::TileState)
+    TileOperation(; contained, shared)
+    TileOperation(operation)
 
-A struct that holds the functions to apply to the contained and shared areas of a tile.
+Create a tile operation that can operate on a [`TileState`](@ref)
+and return a tuple of results from the contained and shared ranges.
 
-It's callable with a tile its state, and returns a tuple of the results from the contained and shared functions.
 
-$(FIELDS)
+
+# Arguments
+- `contained`: Function to apply to contained (non-overlapping) regions
+- `shared`: Function to apply to shared (overlapping) regions
+
+# Examples
+```julia
+# Different functions for contained and shared regions
+op = TileOperation(
+    contained = (data, meta) -> mean(data),
+    shared = (data, meta) -> sum(data)
+)
+
+# Same function for both
+op = TileOperation((data, meta) -> mean(data))
+```
 """
-struct TileOperator{ContainedFunc, SharedFunc}
-    """
-    The function to apply to the contained areas, returns a single value per array.  
-        
-    This function MUST take one input, which are: 
-        (a) the relevant view of the tile, and
-        (b) the metadata contained in the row under consideration.
-
-    The output of this function is a single value, however you define that.
-    """
-    contained_func::ContainedFunc
-    """
-    The function to apply to the shared areas, returns a single value per array.  
-        
-    This function MUST take one input, which are: 
-        (a) the relevant materialized array of the data that was requested, and
-        (b) the metadata contained in the row under consideration.
-
-    The output of this function is a single value, however you define that.  
-
-    **HOWEVER**, the reason we have split these functions up is so that you can pass a combiner function
-    that will combine the results from the contained functions on each tile.
-
-    So, you could stitch rasters together, _or_ you could calculate a rolling minimum or online statistic, to save memory.
-    Something like a histogram would also be a good candidate to return from `shared_func`, as long as the bins are guaranteed
-    to be the same everywhere so they are additive.
-    """
-    shared_func::SharedFunc
+struct TileOperation{C,S}
+    contained::C
+    shared::S
 end
 
-# This function allows us to define dispatches on TileOperators based on the types of the contained functions,
+# Constructor for when the same operation should be used for both
+function TileOperation(operation::Function)
+    TileOperation(operation, operation)
+end
+
+# Keyword constructor for explicit contained/shared functions
+function TileOperation(; 
+    contained::Function,
+    shared::Function=contained
+)
+    TileOperation(contained, shared)
+end
+
+
+# This function allows us to define dispatches on TileOperations based on the types of the contained functions,
 # allowing custom behaviour for different operations.
-function (op::TileOperator{ContainedFunc, SharedFunc})(state::TileState{N}) where {N, ContainedFunc, SharedFunc}
+function (op::TileOperation{ContainedFunc, SharedFunc})(state::TileState{N}) where {N, ContainedFunc, SharedFunc}
     # Note: this function is called within a multithreaded task, so DO NOT multithread within it.
 
     # First, map over the contained ranges and apply the contained function
@@ -82,9 +85,9 @@ end
 
 function _tile_operator_invocation_error_hinter(io, exc, argtypes, kwargs)
     op = exc.f
-    if op isa TileOperator && argtypes <: Tuple{<: TileState}
+    if op isa TileOperation && argtypes <: Tuple{<: TileState}
         println(io, """
-        No matching method found for TileOperator with functions:
+        No matching method found for TileOperation with functions:
             contained_func::$(typeof(op.contained_func))
             shared_func::$(typeof(op.shared_func))
         
@@ -93,7 +96,7 @@ function _tile_operator_invocation_error_hinter(io, exc, argtypes, kwargs)
         that explicitly call the general case, as shown below:
         
         ```
-        (op::TileOperator{$(typeof(op.contained_func)), $(typeof(op.shared_func))})(state::TileState) = invoke(TileOperator{Function, Function}(op.contained_func, op.shared_func), Tuple{TileState}, state)
+        (op::TileOperation{$(typeof(op.contained_func)), $(typeof(op.shared_func))})(state::TileState) = invoke(TileOperation{Function, Function}(op.contained_func, op.shared_func), Tuple{TileState}, state)
         ```
 
         See the Julia documentation on multiple dispatch and `invoke` for more details.
