@@ -122,14 +122,40 @@ function extract(array, ranges, metadata=nothing;
     threaded::Union{Bool, Static.StaticBool} = Static.True(),
     progress = true,
 )
-    _extract(Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine, progress)
+    output_array = Vector{Any}(undef, length(ranges)) # TODO: make this type stable!  Somehow!
+    extract!(output_array, array, ranges, metadata; operation, combine, tiling_scheme, threaded, progress)
+    return output_array
+end
+
+function extract!(
+    output::OutType, array::InputArrayType, ranges::AbstractVector{<:NTuple{N, RangeType}}, metadata = nothing; 
+    operation::TileOperation{C, S},
+    combine::CF,  # Default to taking first result for shared regions
+    tiling_scheme::TilingStrategy,
+    threaded::Union{Bool, Static.StaticBool} = Static.True(),
+    progress = true,
+)::OutType where {OutType <: AbstractVector, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N, C, S, CF}
+
+    _extract!(output, Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine, progress)
+
+    return output
+
+end
+
+
+function _allocate_do_first_tile(array, ranges, metadata, contained_ranges, shared_ranges, tiling_scheme, op::TileOperation, combine_func, progress, prog = nothing)
+    if !isempty(contained_ranges)
+        tile_idx = first(keys(contained_ranges))
+    else # isempty(contained_ranges)
+    end
+
 end
 
 
 # Single-threaded extractor
 # Nothing complicated here.
 
-function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
+function _extract!(output::AbstractVector{OutType}, ::Static.False, array::InputArrayType, ranges::AbstractVector{<:NTuple{N, RangeType}}, metadata, tiling_scheme, op::TileOperation{C, S}, combine_func::CF, progress::Bool) where {C, S, CF, OutType, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N}  
 
     if progress
         prog = Progress(length(ranges); desc = "Extracting...")
@@ -149,6 +175,8 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
 
     
     _EMPTY_INDEX_VECTOR = Int[]
+
+    # result_vec = _allocate_do_first_tile()
 
     @debug "Processing $(length(all_relevant_tiles)) tiles."
     # For each tile, extract the data and apply the operation.
@@ -192,31 +220,26 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
     end
 
     @debug "Combining results to a single vector."
-    # Combine the results from the contained tiles and the shared tiles.  This is a pre-allocated vector for speed.
-
-    CONTAINED_RESULT_ELTYPE = mapfoldl(eltype, Base.promote_type, first(res) for res in results)
-    FINAL_RESULT_ELTYPE = foldl(Base.promote_type, Iterators.map(typeof ∘ last, shared_results), init = CONTAINED_RESULT_ELTYPE)
-    ret = Vector{FINAL_RESULT_ELTYPE}(undef, length(ranges))
 
     # Unwrap the results that were contained in a single tile first
     for (tile_idx, res) in zip(contained_range_tiles, view(results, 1:length(contained_range_tiles)))
         contained_results, __shared_results = res
-        ret[contained_ranges[tile_idx]] .= contained_results
+        output[contained_ranges[tile_idx]] .= contained_results
     end
 
     # Then, unwrap the shared results
     for (geom_idx, res) in shared_results
-        ret[geom_idx] = res
+        output[geom_idx] = res
     end
 
-    return ret
+    return output
 end
 
 
 # Multi-threaded extractor
 # This gets a bit more complicated, since it (A) keeps track of state and (B) uses channels to send results back to the main thread where they are processed.
 
-function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
+function _extract!(output, ::Static.True, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
 
     if progress
         prog = Progress(length(ranges); desc = "Extracting...")
@@ -229,8 +252,8 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
     shared_only_tiles = setdiff(shared_range_tiles, contained_range_tiles)
     all_relevant_tiles = collect(union(contained_range_tiles, shared_only_tiles))
 
-    shared_input_channel = Channel{Tuple{indextype(tiling_scheme), Any}}(Inf)
-    shared_output_channel = Channel{Tuple{indextype(tiling_scheme), Any}}(Inf)
+    # shared_input_channel = Channel{Tuple{indextype(tiling_scheme), Any}}(Inf)
+    # shared_output_channel = Channel{Tuple{indextype(tiling_scheme), Any}}(Inf)
 
     
     _EMPTY_INDEX_VECTOR = Int[]
@@ -289,20 +312,20 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
 
     # Combine the results from the contained tiles and the shared tiles.  This is a pre-allocated vector for speed.
 
-    CONTAINED_RESULT_ELTYPE = mapfoldl(eltype, Base.promote_type, first(res) for res in results)
-    FINAL_RESULT_ELTYPE = foldl(Base.promote_type, Iterators.map(typeof ∘ last, shared_results), init = CONTAINED_RESULT_ELTYPE)
-    ret = Vector{FINAL_RESULT_ELTYPE}(undef, length(ranges))
+    # CONTAINED_RESULT_ELTYPE = mapfoldl(eltype, Base.promote_type, first(res) for res in results)
+    # FINAL_RESULT_ELTYPE = foldl(Base.promote_type, Iterators.map(typeof ∘ last, shared_results), init = CONTAINED_RESULT_ELTYPE)
+    # ret = Vector{FINAL_RESULT_ELTYPE}(undef, length(ranges))
 
     # Unwrap the results that were contained in a single tile first
     for (tile_idx, res) in zip(contained_range_tiles, view(results, 1:length(contained_range_tiles)))
         contained_results, __shared_results = res
-        ret[contained_ranges[tile_idx]] .= contained_results
+        output[contained_ranges[tile_idx]] .= contained_results
     end
 
     # Then, unwrap the shared results
     for (geom_idx, res) in shared_results
-        ret[geom_idx] = res
+        output[geom_idx] = res
     end
 
-    return ret
+    return output
 end
