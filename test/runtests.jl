@@ -1,8 +1,8 @@
 using TiledExtractor
 using Test
 
-if !haskey(ENV, "RASTERDATASOURES_PATH")
-    ENV["RASTERDATASOURES_PATH"] = mktempdir()
+if !haskey(ENV, "RASTERDATASOURCES_PATH")
+    ENV["RASTERDATASOURCES_PATH"] = mktempdir()
 end
 
 # This test script uses TestItems.jl,
