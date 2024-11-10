@@ -119,16 +119,22 @@ function extract(array, ranges, metadata=nothing;
     operation::TileOperation,
     combine,  # Default to taking first result for shared regions
     tiling_scheme::TilingStrategy,
-    threaded::Union{Bool, Static.StaticBool} = Static.True()
+    threaded::Union{Bool, Static.StaticBool} = Static.True(),
+    progress = true,
 )
-    _extract(Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine)
+    _extract(Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine, progress)
 end
 
 
 # Single-threaded extractor
 # Nothing complicated here.
 
-function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func)
+function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
+
+    if progress
+        prog = Progress(length(ranges), "Extracting...")
+    end
+
     # for now, DO NOT CHANNELIZE/MULTITHREAD
     # simply run single threaded so we are confident of the state of the program
 
@@ -155,7 +161,9 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
             _nothing_or_view(metadata, get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR)), 
             _nothing_or_view(metadata, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR))
         )
-        contained_results, shared_results = op(state)        
+        contained_results, shared_results = op(state)  
+        progress && update!(prog, length(contained_results))
+        contained_results, shared_results
     end
 
     # For each geometry split across tiles, combine the results from the relevant tiles.
@@ -173,6 +181,7 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
             shared_results,
             geom_idx => combine_func(relevant_results)
         )
+        progress && next!(prog)
     end
 
     # Combine the results from the contained tiles and the shared tiles.  This is a pre-allocated vector for speed.
@@ -199,7 +208,11 @@ end
 # Multi-threaded extractor
 # This gets a bit more complicated, since it (A) keeps track of state and (B) uses channels to send results back to the main thread where they are processed.
 
-function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func)
+function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::TileOperation, combine_func, progress)
+
+    if progress
+        prog = Progress(length(ranges), "Extracting...")
+    end
 
     # Split the ranges into their tiles.
     contained_ranges, shared_ranges, shared_ranges_indices = split_ranges_into_tiles(tiling_scheme, ranges)
@@ -239,6 +252,9 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
                 $(_nothing_or_view(metadata, get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR))), 
                 $(_nothing_or_view(metadata, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR)))
             )
+            if $progress
+                update!(prog, $(length((get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR)))))
+            end
             contained_results, shared_results = op(state)
         end   
     end
@@ -247,7 +263,7 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
 
     # For each geometry split across tiles, combine the results from the relevant tiles.
     shared_results = []
-
+    # TODO: this is still single threaded, we should channelize it.
     for geom_idx in keys(shared_ranges_indices)
         relevant_results = [
             begin
@@ -260,6 +276,7 @@ function _extract(::Static.True, array, ranges, metadata, tiling_scheme, op::Til
             shared_results,
             geom_idx => combine_func(relevant_results)
         )
+        progress && next!(prog)
     end
 
     # Combine the results from the contained tiles and the shared tiles.  This is a pre-allocated vector for speed.

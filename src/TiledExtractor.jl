@@ -1,6 +1,6 @@
 module TiledExtractor
 
-using DocStringExtensions
+using DocStringExtensions, ProgressMeter
 
 include("utils.jl")
 
