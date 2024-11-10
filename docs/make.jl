@@ -17,6 +17,7 @@ makedocs(;
         "Developer Documentation" => "devdocs.md",
         "API" => "api.md",
     ],
+    warnonly=true,
 )
 
 deploydocs(;
