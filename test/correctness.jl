@@ -1,16 +1,6 @@
-using Rasters, RasterDataSources, ArchGDAL
-using NaturalEarth
-import GeoInterface as GI
+using Test, TestItems
 
-using OnlineStats
-
-using TiledExtractor
-
-using Test
-
-# First, test extraction using Base types
-
-@testset "All contained" begin
+@testitem "All contained" tags=[:Correctness, :Base] begin
     array = rand(20, 20)
     ranges = [
         (1:10, 1:10),
@@ -27,7 +17,7 @@ using Test
     @test results == [sum(view(array, r...)) for r in ranges]
 end
 
-@testset "Mixed contained and shared" begin
+@testitem "Mixed contained and shared" tags=[:Correctness, :Base] begin
     array = rand(20, 20)
     ranges = [
         (1:10, 1:10),  # Contained in top-left tile
@@ -46,10 +36,9 @@ end
     # but the input is nondeterministic, so we can't do it.
     # Maybe the input should be deterministic?  TODO.
     # @test all(abs.(results .- [sum(view(array, r...)) for r in ranges]) .<= eps.(results))
-
 end
 
-@testset "All shared" begin
+@testitem "All shared" tags=[:Correctness, :Base] begin
     array = rand(20, 20)
     ranges = [
         (1:15, 1:15),
@@ -65,8 +54,7 @@ end
     # @test all(abs.(results .- [sum(view(array, r...)) for r in ranges]) .<= eps.(results))
 end
 
-
-@testset "3D" begin
+@testitem "3D" tags=[:Correctness, :Base] begin
     data = rand(10, 10, 10)
     ranges = [
         (1:5, 1:5, 1:5),
@@ -87,14 +75,20 @@ end
     @test results ≈ [sum(view(data, r...)) for r in ranges]
 end
 
+@testitem "Rasters.jl worldwide zonal" tags=[:Correctness, :Rasters] begin
+    using Rasters, RasterDataSources, ArchGDAL
+    using NaturalEarth
+    import GeoInterface as GI
 
-@testset "Rasters.jl worldwide zonal" begin
     ras = Raster(WorldClim{Climate}, :tmin, month=1)
     all_countries = naturalearth("admin_0_countries", 10)
 
     zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches)
 
-    op = TiledExtractor.TileOperation((x, meta) -> zonal(sum, x, of=meta, boundary = :touches), (x, meta) -> zonal(sum, x, of=meta, boundary = :touches))
+    op = TiledExtractor.TileOperation(
+        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches), 
+        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches)
+    )
 
     extents = GI.extent.(all_countries.geometry)
     ranges = Rasters.DD.dims2indices.((ras,), Touches.(extents))
@@ -105,8 +99,8 @@ end
     @test tiled_zonal_values ≈ zonal_values
 end
 
-@testset "Onlinetats" begin
+@testitem "OnlineStats" tags=[:Correctness, :OnlineStats] begin
+    using OnlineStats
 
     data = rand(100, 100)
-
 end
