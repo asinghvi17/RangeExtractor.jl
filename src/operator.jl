@@ -10,6 +10,9 @@ The results from the contained and shared ranges are then combined to form the f
 A [`TileOperation`](@ref) is callable with a [`TileState`](@ref), and returns a tuple of the results from the contained and shared functions.    
 
 =#
+
+export TileOperation
+
 """
     TileOperation(; contained, shared)
     TileOperation(operation)

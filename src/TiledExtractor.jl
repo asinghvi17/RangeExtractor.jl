@@ -9,4 +9,6 @@ include("state.jl")
 include("operator.jl")
 include("extractor.jl")
 
+export extract
+
 end

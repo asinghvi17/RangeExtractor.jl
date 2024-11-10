@@ -6,6 +6,8 @@ This struct holds all the state that is relevant to a single tile.
 It is the input to the [`TileOperation`](@ref), and is used to apply the operator to the tile.
 =#
 
+export TileState
+
 """
     TileState{N, TileType, RowVecType}
     TileState(tile::TileType, tile_offset::CartesianIndex{N}, contained_rows::AbstractVector, shared_rows::AbstractVector)

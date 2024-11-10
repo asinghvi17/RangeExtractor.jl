@@ -30,7 +30,13 @@ function _nothing_or_view(x, idx)
     isnothing(x) ? nothing : view(x, idx)
 end
 
+"""
+    module Static
 
+A simple module that defines a type `StaticBool` that can be used to represent a boolean value at compile time.
+
+Implementation taken from GeometryOps.jl and Rasters.jl before it.  Inspired by Static.jl.
+"""
 module Static
     export True, False, StaticBool
     abstract type StaticBool{value} end
