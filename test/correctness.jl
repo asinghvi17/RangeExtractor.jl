@@ -83,11 +83,11 @@ end
     ras = Raster(WorldClim{Climate}, :tmin, month=1)
     all_countries = naturalearth("admin_0_countries", 10)
 
-    zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches)
+    zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches, progress = false, threaded = false)
 
     op = TiledExtractor.TileOperation(
-        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches), 
-        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches)
+        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false), 
+        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false)
     )
 
     extents = GI.extent.(all_countries.geometry)
@@ -102,5 +102,51 @@ end
 @testitem "OnlineStats" tags=[:Correctness, :OnlineStats] begin
     using OnlineStats
 
-    data = rand(100, 100)
+    data = rand(1000, 1000)
+    chunk_size = 100
+    tiling_scheme = FixedGridTiling{2}(chunk_size)
+
+    ranges = [
+        (1:200, 1:200),
+        (300:500, 300:500),
+        (600:800, 600:800),
+        (100:400, 500:800),
+        (500:700, 100:300)
+    ]
+
+    # Create an OnlineStats Series that tracks mean, median and variance
+    op = TiledExtractor.TileOperation(
+        # For things contained in a tile, return the value of the series.
+        (x, meta) -> value(fit!(Series(Mean(), KahanSum(), Variance()), x)), 
+        # For things shared across tiles, return the series itself, so we can merge them later.
+        (x, meta) -> fit!(Series(Mean(), KahanSum(), Variance()), x)
+    )
+
+    # Function to combine results from different tiles
+    function combine_series(series_list)
+        # Extract the first statistic, and an iterator over the rest of them.
+        combined, rest = Iterators.peel(series_list)
+        # Merge the rest into the first.
+        for s in rest
+            merge!(combined, s)
+        end
+        # Return the value of the combined statistic.
+        return value(combined)
+    end
+
+    results = TiledExtractor._extract(TiledExtractor.Static.False(), data, ranges, nothing, tiling_scheme, op, combine_series)
+
+    # Calculate expected results directly
+    expected = map(ranges) do r
+        s = Series(Mean(), KahanSum(), Variance())
+        fit!(s, view(data, r...))
+        value(s)
+    end
+
+    # Test that results match
+    for (result, expect) in zip(results, expected)
+        @test result[1] ≈ expect[1]  # Mean
+        @test result[2] ≈ expect[2]  # Kahan (compensated) sum
+        @test result[3] ≈ expect[3]  # Variance
+    end
 end
