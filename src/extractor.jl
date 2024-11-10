@@ -145,13 +145,18 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
     shared_only_tiles = setdiff(shared_range_tiles, contained_range_tiles)
     all_relevant_tiles = collect(union(contained_range_tiles, shared_only_tiles))
 
+    @debug "Using $(length(all_relevant_tiles)) tiles with $(length(ranges)) ranges."
+
     
     _EMPTY_INDEX_VECTOR = Int[]
 
+    @debug "Processing $(length(all_relevant_tiles)) tiles."
     # For each tile, extract the data and apply the operation.
     results = map(all_relevant_tiles) do tile_idx
+        @debug "Processing tile $tile_idx."
         tile_ranges = tile_to_ranges(tiling_scheme, tile_idx)
         tile_ranges = crop_ranges_to_array(array, tile_ranges)
+        @debug "Reading tile $tile_idx into memory."
         tile = copy(view(array, tile_ranges...))
         state = TileState(
             tile, 
@@ -161,6 +166,7 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
             _nothing_or_view(metadata, get(contained_ranges, tile_idx, _EMPTY_INDEX_VECTOR)), 
             _nothing_or_view(metadata, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR))
         )
+        @debug "Operating on tile $tile_idx."
         contained_results, shared_results = op(state)  
         progress && update!(prog, length(contained_results))
         contained_results, shared_results
@@ -169,6 +175,7 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
     # For each geometry split across tiles, combine the results from the relevant tiles.
     shared_results = []
 
+    @debug "Combining shared geometries."
     for geom_idx in keys(shared_ranges_indices)
         relevant_results = [
             begin
@@ -184,6 +191,7 @@ function _extract(::Static.False, array, ranges, metadata, tiling_scheme, op::Ti
         progress && next!(prog)
     end
 
+    @debug "Combining results to a single vector."
     # Combine the results from the contained tiles and the shared tiles.  This is a pre-allocated vector for speed.
 
     CONTAINED_RESULT_ELTYPE = mapfoldl(eltype, Base.promote_type, first(res) for res in results)
