@@ -13,11 +13,18 @@ export get_tile_indices, tile_to_ranges, split_ranges_into_tiles
 Abstract type for tiling strategies.  Must hold all necessary information to create a tiling strategy.
 
 All tiling strategies MUST implement the following methods:
-- `get_tile_indices(tiling, range)`
-- `tile_to_ranges(tiling, index)`
-- `split_ranges_into_tiles(tiling, ranges)`
+- `indextype(::Type{<: TilingStrategy})`: Return the type of the index used by the tiling strategy.  For example, [`FixedGridTiling`](@ref) returns `CartesianIndex{N}`.
+- `get_tile_indices(tiling, range)`: Given a range, return the indices of the tiles that the range intersects.
+- `tile_to_ranges(tiling, index)`: Given a tile index, return the ranges that the tile covers.
+- `split_ranges_into_tiles(tiling, ranges)`: Given a set of ranges, return three dictionaries:
+    - A dictionary mapping tile indices to the indices of the ranges that the tile fully contains (Ints).
+    - A dictionary mapping tile indices to the indices of the ranges that the tile shares with one or more other ranges (Ints).
+    - A dictionary mapping the indices of the shared ranges (Ints) to the tile indices that contain them.
 """
 abstract type TilingStrategy end
+
+indextype(::Type{<: TilingStrategy}) = error("Not implemented for tiling strategy $tiling")
+indextype(tiling::TilingStrategy) = indextype(typeof(tiling))
 
 function get_tile_indices(tiling::TilingStrategy, range::NTuple{N, RangeType}) where {N, RangeType <: AbstractUnitRange}
     error("Not implemented for tiling strategy $tiling")
@@ -54,6 +61,7 @@ end
 
 FixedGridTiling{N}(tilesize::Int) where N = FixedGridTiling{N}(ntuple(_ -> tilesize, N))
 
+indextype(::Type{FixedGridTiling{N}}) where N = CartesianIndex{N}
 
 function _get_range_of_multiples(range, factor)
     start = floor(Int, (first(range) - 1)/factor) + 1 # account for 1 based indexing
