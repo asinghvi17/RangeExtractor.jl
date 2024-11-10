@@ -12,9 +12,14 @@ using Test, TestItems
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
     op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
-    results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
+    # Test both threaded and non-threaded versions
+    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
+    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    expected = [sum(view(array, r...)) for r in ranges]
 
-    @test results == [sum(view(array, r...)) for r in ranges]
+    @test results_threaded == expected
+    @test results_single == expected
+    @test results_threaded == results_single
 end
 
 @testitem "Mixed contained and shared" tags=[:Correctness, :Base] begin
@@ -28,10 +33,15 @@ end
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
     op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
-    results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
+    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
+    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    expected = [sum(view(array, r...)) for r in ranges]
+
     # NOTE: this has to be approximate, since the order of summation is different for the two
     # different approaches.
-    @test results ≈ [sum(view(array, r...)) for r in ranges]
+    @test results_threaded ≈ expected
+    @test results_single ≈ expected
+    @test results_threaded ≈ results_single
     # They should be about eps() apart, and we can test that,
     # but the input is nondeterministic, so we can't do it.
     # Maybe the input should be deterministic?  TODO.
@@ -48,9 +58,13 @@ end
     tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
 
     op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
-    results = TiledExtractor._extract(array, ranges, nothing, tiling_scheme, op, sum)
+    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
+    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    expected = [sum(view(array, r...)) for r in ranges]
 
-    @test results ≈ [sum(view(array, r...)) for r in ranges]
+    @test results_threaded ≈ expected
+    @test results_single ≈ expected
+    @test results_threaded ≈ results_single
     # @test all(abs.(results .- [sum(view(array, r...)) for r in ranges]) .<= eps.(results))
 end
 
@@ -70,15 +84,21 @@ end
     tiling_scheme = FixedGridTiling{3}(5)
 
     op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
-    results = TiledExtractor._extract(data, ranges, nothing, tiling_scheme, op, sum)
+    results_threaded = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
+    results_single = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    expected = [sum(view(data, r...)) for r in ranges]
 
-    @test results ≈ [sum(view(data, r...)) for r in ranges]
+    @test results_threaded ≈ expected
+    @test results_single ≈ expected
+    @test results_threaded ≈ results_single
 end
 
 @testitem "Rasters.jl worldwide zonal" tags=[:Correctness, :Rasters] begin
     using Rasters, RasterDataSources, ArchGDAL
     using NaturalEarth
     import GeoInterface as GI
+
+    import TiledExtractor: extract
 
     ras = Raster(WorldClim{Climate}, :tmin, month=1)
     all_countries = naturalearth("admin_0_countries", 10)
@@ -94,9 +114,14 @@ end
     ranges = Rasters.DD.dims2indices.((ras,), Touches.(extents))
     scheme = FixedGridTiling{2}(100)
 
-    tiled_zonal_values = TiledExtractor._extract(ras, ranges, all_countries.geometry, scheme, op, sum)
+    tiled_threaded = extract(ras, ranges, all_countries.geometry; 
+        operation=op, combine=sum, tiling_scheme=scheme, threaded=true)
+    tiled_single = extract(ras, ranges, all_countries.geometry; 
+        operation=op, combine=sum, tiling_scheme=scheme, threaded=false)
 
-    @test tiled_zonal_values ≈ zonal_values
+    @test tiled_threaded ≈ zonal_values
+    @test tiled_single ≈ zonal_values
+    @test tiled_threaded ≈ tiled_single
 end
 
 @testitem "OnlineStats" tags=[:Correctness, :OnlineStats] begin
@@ -134,7 +159,10 @@ end
         return value(combined)
     end
 
-    results = TiledExtractor._extract(TiledExtractor.Static.False(), data, ranges, nothing, tiling_scheme, op, combine_series)
+    results_threaded = extract(data, ranges; operation=op, combine=combine_series, 
+        tiling_scheme=tiling_scheme, threaded=true)
+    results_single = extract(data, ranges; operation=op, combine=combine_series, 
+        tiling_scheme=tiling_scheme, threaded=false)
 
     # Calculate expected results directly
     expected = map(ranges) do r
@@ -143,10 +171,24 @@ end
         value(s)
     end
 
-    # Test that results match
-    for (result, expect) in zip(results, expected)
+    # Test that results match for both threaded and single-threaded versions
+    
+    for (result, expect) in zip(results_single, expected)
         @test result[1] ≈ expect[1]  # Mean
         @test result[2] ≈ expect[2]  # Kahan (compensated) sum
         @test result[3] ≈ expect[3]  # Variance
+    end
+
+    for (result, expect) in zip(results_threaded, expected)
+        @test result[1] ≈ expect[1]  # Mean
+        @test result[2] ≈ expect[2]  # Kahan (compensated) sum
+        @test result[3] ≈ expect[3]  # Variance
+    end
+
+    # Test that threaded and single-threaded results match each other
+    for (t, s) in zip(results_threaded, results_single)
+        @test t[1] ≈ s[1]  # Mean
+        @test t[2] ≈ s[2]  # Kahan sum
+        @test t[3] ≈ s[3]  # Variance
     end
 end
