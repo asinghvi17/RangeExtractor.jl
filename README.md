@@ -87,7 +87,11 @@ results = TiledExtractor.extract(ras, ranges, countries.geometry;
 )
 ```
 
+## Similar approaches elsewhere
+
+- `exactextract` in R and Python does something similar, but it is forced to keep all vector statistics materialized in memory.  See https://isciences.github.io/exactextract/performance.html#the-raster-sequential-strategy.
 
 ## Acknowledgements
 
 This effort was funded by the NASA MEaSUREs program in contribution to the Inter-mission Time Series of Land Ice Velocity and Elevation (ITS_LIVE) project (https://its-live.jpl.nasa.gov/).
+
