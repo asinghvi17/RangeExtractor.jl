@@ -1,5 +1,8 @@
 module TiledExtractor
 
+using TimerOutputs
+const to = TimerOutput()
+
 using DocStringExtensions, ProgressMeter
 
 include("utils.jl")
