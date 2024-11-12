@@ -110,7 +110,8 @@ end
         (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false)
     )
 
-    extents = GI.extent.(all_countries.geometry)
+    geoms = all_countries.geometry
+    extents = GI.extent.(geoms)
     ranges = Rasters.DD.dims2indices.((ras,), Touches.(extents))
     scheme = FixedGridTiling{2}(100)
 
