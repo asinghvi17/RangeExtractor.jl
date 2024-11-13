@@ -8,7 +8,7 @@ TestItems.jl integrates with both VSCode and the command line, making it easy to
 
 ### Running Tests
 
-To run all tests, simply run `Pkg.test("TiledExtractor")` from the Julia REPL.
+To run all tests, simply run `Pkg.test("RangeExtractor")` from the Julia REPL.
 
 To run a subset of tests, you can use TestItemRunner.jl to filter tests.  Here's an example from the TestItems.jl documentation:
 

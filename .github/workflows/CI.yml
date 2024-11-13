@@ -73,6 +73,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using TiledExtractor
-          DocMeta.setdocmeta!(TiledExtractor, :DocTestSetup, :(using TiledExtractor); recursive=true)
-          doctest(TiledExtractor)
+          using RangeExtractor
+          DocMeta.setdocmeta!(RangeExtractor, :DocTestSetup, :(using RangeExtractor); recursive=true)
+          doctest(RangeExtractor)

@@ -1,6 +1,6 @@
 # Operators
 
-TiledExtractor allows you to configure what the `extract` function does by passing operators.  An operator must:
+RangeExtractor allows you to configure what the `extract` function does by passing operators.  An operator must:
 - subtype `AbstractTileOperator`
 - be callable, and take a single argument that is a `TileState`
 - return or do _something_ with the tile state

@@ -23,6 +23,7 @@ Abstract type for tile operations, which are callable structs that can operate o
 All subtypes of `AbstractTileOperation` MUST implement the following interface:
 
 - `(op::AbstractTileOperation)(state::TileState)`: Apply the operation to the given tile state.  Return a tuple of (contained_results, shared_results).  The order of the results **MUST** be the same as the order of the indices in `state.contained_ranges` and `state.shared_ranges`.
+- `combine(op::AbstractTileOperation, range, metadata, results, tile_idxs)`: Combine the outputs from the portions of the shared ranges, and return the final result.
 
 Optionally, subtypes can implement the following methods:
 - `(op::AbstractTileOperation)(state::TileState, contained_channel, shared_channel)`: Apply the operation to the given tile state, and write output to the specified channels.

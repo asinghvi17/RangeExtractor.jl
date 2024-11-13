@@ -1,14 +1,14 @@
-using TiledExtractor
+using RangeExtractor
 using Documenter
 
-DocMeta.setdocmeta!(TiledExtractor, :DocTestSetup, :(using TiledExtractor); recursive=true)
+DocMeta.setdocmeta!(RangeExtractor, :DocTestSetup, :(using RangeExtractor); recursive=true)
 
 makedocs(;
-    modules=[TiledExtractor],
+    modules=[RangeExtractor],
     authors="Anshul Singhvi <anshulsinghvi@gmail.com>, Alex Gardner <alex.s.gardner@jpl.nasa.gov>, and contributors",
-    sitename="TiledExtractor.jl",
+    sitename="RangeExtractor.jl",
     format=Documenter.HTML(;
-        canonical="https://asinghvi17.github.io/TiledExtractor.jl",
+        canonical="https://asinghvi17.github.io/RangeExtractor.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -23,6 +23,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/asinghvi17/TiledExtractor.jl",
+    repo="github.com/asinghvi17/RangeExtractor.jl",
     devbranch="main",
 )

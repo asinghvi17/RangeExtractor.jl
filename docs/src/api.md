@@ -4,5 +4,5 @@
 ```
 
 ```@autodocs
-Modules = [TiledExtractor]
+Modules = [RangeExtractor]
 ```

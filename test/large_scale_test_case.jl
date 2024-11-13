@@ -1,4 +1,4 @@
-using TiledExtractor
+using RangeExtractor
 using TiledIteration, StatsBase
 using OnlineStats
 
@@ -14,4 +14,4 @@ op = TileOperation(
 
 strategy = FixedGridTiling{2}(350)
 
-results = TiledExtractor.extract(array, ranges; operation = op, tiling_scheme = strategy, combine = (x -> foldl(merge!, x)))
+results = RangeExtractor.extract(array, ranges; operation = op, tiling_scheme = strategy, combine = (x -> foldl(merge!, x)))

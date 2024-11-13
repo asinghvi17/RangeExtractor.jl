@@ -1,4 +1,4 @@
-module TiledExtractor
+module RangeExtractor
 
 using TimerOutputs
 const to = TimerOutput()

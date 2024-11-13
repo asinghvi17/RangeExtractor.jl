@@ -1,4 +1,4 @@
-name = "TiledExtractor"
+name = "RangeExtractor"
 uuid = "0151565a-6c01-463c-b553-c2b2e3b729c0"
 authors = ["Anshul Singhvi <anshulsinghvi@gmail.com>", "Alex Gardner <alex.s.gardner@jpl.nasa.gov>", "and contributors"]
 version = "0.1.0-DEV"

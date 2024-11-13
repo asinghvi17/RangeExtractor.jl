@@ -1,6 +1,6 @@
 # Tiling Strategies
 
-TiledExtractor allows you to configure how the `extract` function handles tiling by passing a tiling strategy.  A tiling strategy must:
+RangeExtractor allows you to configure how the `extract` function handles tiling by passing a tiling strategy.  A tiling strategy must:
 - subtype `AbstractTilingStrategy`
 
 A tiling strategy splits the input ranges into tiles.  The simplest strategy is to use a fixed grid.  But you can also use an R-tree formulation via SpatialIndexing.jl.

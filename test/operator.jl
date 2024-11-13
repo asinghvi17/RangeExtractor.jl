@@ -7,7 +7,7 @@ end
 
 @testitem "Basic operation" setup=[IncreasingReshapedArray] tags=[:TileOperation] begin
     using Statistics
-    using TiledExtractor: TileState, TileOperation
+    using RangeExtractor: TileState, TileOperation
     
     # arr is defined in the IncreasingReshapedArray snippet as reshape(1:100, 10, 10)
     state = TileState(
@@ -31,7 +31,7 @@ end
 
 @testitem "Different contained/shared functions" setup=[IncreasingReshapedArray] tags=[:TileOperation] begin
     using Statistics
-    using TiledExtractor: TileState, TileOperation
+    using RangeExtractor: TileState, TileOperation
     
     # arr is defined in the IncreasingReshapedArray snippet as reshape(1:100, 10, 10)
     state = TileState(
@@ -58,7 +58,7 @@ end
 
 @testitem "Multiple ranges" setup=[IncreasingReshapedArray] tags=[:TileOperation] begin
     using Statistics
-    using TiledExtractor: TileState, TileOperation
+    using RangeExtractor: TileState, TileOperation
     
     # arr is defined in the IncreasingReshapedArray snippet as reshape(1:100, 10, 10)
     state = TileState(
@@ -83,7 +83,7 @@ end
 
 @testitem "Operation with metadata" setup=[IncreasingReshapedArray] tags=[:TileOperation] begin
     using Statistics
-    using TiledExtractor: TileState, TileOperation
+    using RangeExtractor: TileState, TileOperation
     
     # arr is defined in the IncreasingReshapedArray snippet as reshape(1:100, 10, 10)
     metadata = [2, 3]  # Multiplication factors

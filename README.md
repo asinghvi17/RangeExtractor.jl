@@ -1,23 +1,23 @@
-# TiledExtractor
+# RangeExtractor
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://asinghvi17.github.io/TiledExtractor.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://asinghvi17.github.io/TiledExtractor.jl/dev/)
-[![Build Status](https://github.com/asinghvi17/TiledExtractor.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/asinghvi17/TiledExtractor.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://asinghvi17.github.io/RangeExtractor.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://asinghvi17.github.io/RangeExtractor.jl/dev/)
+[![Build Status](https://github.com/asinghvi17/RangeExtractor.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/asinghvi17/RangeExtractor.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
-**TiledExtractor.jl** is a package for efficiently extracting and operating on subsets of large (out-of-memory) arrays, and is optimized for use with arrays that have very high load time.
+**RangeExtractor.jl** is a package for efficiently extracting and operating on subsets of large (out-of-memory) arrays, and is optimized for use with arrays that have very high load time.
 
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add("TiledExtractor")
+Pkg.add("RangeExtractor")
 
-using TiledExtractor
+using RangeExtractor
 ```
 
 ## Quick Start
 ```julia
-using TiledExtractor
+using RangeExtractor
 
 # Create sample array
 array = ones(20, 20)
@@ -57,7 +57,7 @@ results = extract(array, ranges;
 ## Generic to any Array
 
 ```julia
-using TiledExtractor
+using RangeExtractor
 using Rasters, ArchGDAL
 using RasterDataSources, NaturalEarth
 
@@ -80,7 +80,7 @@ op = TileOperation(
 )
 
 # Calculate zonal statistics
-results = TiledExtractor.extract(ras, ranges, countries.geometry;
+results = RangeExtractor.extract(ras, ranges, countries.geometry;
     operation = op,
     combine = sum,
     tiling_scheme = tiling_scheme

@@ -1,4 +1,4 @@
-using TiledExtractor
+using RangeExtractor
 using Test
 
 if !haskey(ENV, "RASTERDATASOURCES_PATH")

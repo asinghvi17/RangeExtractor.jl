@@ -37,7 +37,7 @@ Basic array operations:
 ## Simple usage:
 
 ```julia
-using TiledExtractor
+using RangeExtractor
 
 # Create a 2D array
 array = ones(20, 20)
@@ -70,10 +70,10 @@ println(results)  # Outputs the sums over the specified ranges
 
 ## With Rasters.jl
 
-Note that this example uses TiledExtractor directly.  In the near future we will integrate with Rasters.jl to allow cleaner syntax.
+Note that this example uses RangeExtractor directly.  In the near future we will integrate with Rasters.jl to allow cleaner syntax.
 
 ```julia
-using TiledExtractor
+using RangeExtractor
 using Rasters, RasterDataSources
 using NaturalEarth  # For country geometries
 import GeoInterface  # For accessing extents of geometries

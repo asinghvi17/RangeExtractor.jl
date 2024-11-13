@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = TiledExtractor
+CurrentModule = RangeExtractor
 ```
 
-# TiledExtractor
+# RangeExtractor
 
-Documentation for [TiledExtractor](https://github.com/asinghvi17/TiledExtractor.jl).
+Documentation for [RangeExtractor](https://github.com/asinghvi17/RangeExtractor.jl).
 
 # Flow of control
 
-TiledExtractor is designed to efficiently process large arrays by splitting them into manageable tiles and performing operations on each tile independently. This approach is particularly useful when working with arrays that are too large to fit in memory, and for arrays where I/O is a bottleneck (e.g. S3 or cloud hosted arrays).
+RangeExtractor is designed to efficiently process large arrays by splitting them into manageable tiles and performing operations on each tile independently. This approach is particularly useful when working with arrays that are too large to fit in memory, and for arrays where I/O is a bottleneck (e.g. S3 or cloud hosted arrays).
 
 ## Inputs
 

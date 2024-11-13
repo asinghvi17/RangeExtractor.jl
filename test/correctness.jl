@@ -9,9 +9,9 @@ using Test, TestItems
         (11:20, 1:10),
     ]
 
-    tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
+    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     # Test both threaded and non-threaded versions
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
@@ -30,9 +30,9 @@ end
         (11:20, 11:20) # Contained in bottom-right tile
     ]
 
-    tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
+    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
@@ -55,9 +55,9 @@ end
         (10:20, 10:20),
     ]
 
-    tiling_scheme = TiledExtractor.FixedGridTiling{2}(10)
+    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
@@ -83,7 +83,7 @@ end
 
     tiling_scheme = FixedGridTiling{3}(5)
 
-    op = TiledExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
     results_threaded = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(data, r...)) for r in ranges]
@@ -98,14 +98,14 @@ end
     using NaturalEarth
     import GeoInterface as GI
 
-    import TiledExtractor: extract
+    import RangeExtractor: extract
 
     ras = Raster(WorldClim{Climate}, :tmin, month=1)
     all_countries = naturalearth("admin_0_countries", 10)
 
     zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches, progress = false, threaded = false)
 
-    op = TiledExtractor.TileOperation(
+    op = RangeExtractor.TileOperation(
         (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false), 
         (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false)
     )
@@ -141,7 +141,7 @@ end
     ]
 
     # Create an OnlineStats Series that tracks mean, median and variance
-    op = TiledExtractor.TileOperation(
+    op = RangeExtractor.TileOperation(
         # For things contained in a tile, return the value of the series.
         (x, meta) -> value(fit!(Series(Mean(), KahanSum(), Variance()), x)), 
         # For things shared across tiles, return the series itself, so we can merge them later.
