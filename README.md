@@ -67,8 +67,10 @@ ras = Raster(WorldClim{Climate}, :tmin, month=1)
 # Get country polygons
 countries = naturalearth("admin_0_countries", 10)
 
+extents = GI.extent.(countries.geometry)
+
 # Convert extents to index ranges
-ranges = Rasters.dims2indices.((ras,), Touches.(extents))
+ranges = Rasters.dims2indices.((ras,), Rasters.Touches.(extents))
 
 # Define tiling scheme
 tiling_scheme = FixedGridTiling{2}(100)
