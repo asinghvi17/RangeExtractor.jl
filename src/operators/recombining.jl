@@ -1,4 +1,4 @@
-struct RecombiningTileOperation{F} <: AbstractTileOperation end
+struct RecombiningTileOperation{F} <: AbstractTileOperation
     f::F # if this is identity, then nothing happens
 end
 
@@ -24,14 +24,18 @@ function (op::RecombiningTileOperation)(state::TileState, contained_channel::Cha
 end
 
 function combine(op::RecombiningTileOperation, data, range, metadata, results, tile_idxs; strategy)
-    parent_array = zeros(axes(view(data, range...)))
+    # Create a zeroed out version of the parent array,
+    # viewed at the appropriate indices.
+    collected_array = zero(view(data, range...))
 
+    # Populate the array with the results from each tile.
     for (result, tile_idx) in zip(results, tile_idxs)
         current_tile_ranges = tile_to_ranges(strategy, tile_idx)
         ranges_to_assign_to = relevant_range_from_tile_origin(range, current_tile_ranges)
 
-        parent_array[ranges_to_assign_to...] .= result
+        collected_array[ranges_to_assign_to...] .= result
     end
-
-    return op.f(parent_array)
+    
+    # Return the result of the operation on the collected array.
+    return op.f(collected_array)
 end
