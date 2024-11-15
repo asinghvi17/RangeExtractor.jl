@@ -1,3 +1,4 @@
+export TileOperation
 
 """
     TileOperation(; contained, shared, combine)
@@ -45,12 +46,14 @@ end
 TileOperation(operation::Function) = TileOperation(contained = operation, shared = operation, combine = operation)
 TileOperation(; contained, shared = contained, combine) = TileOperation{typeof(contained), typeof(shared), typeof(combine)}(contained, shared, combine)
 
-function (op::TileOperation)(tile::TileState)
-    contained_results = op.contained_func.(view.((tile.data,), tile.contained_ranges), tile.contained_metadata)
-    shared_results = op.shared_func.(view.((tile.data,), tile.shared_ranges), tile.shared_metadata)
+function (op::TileOperation)(state::TileState)
+    contained_view_generator = (view(state.tile, r...) for r in state.contained_ranges)
+    shared_view_generator = (view(state.tile, relevant_range_from_tile_origin(state, r)...) for r in state.shared_ranges)
+    contained_results = op.contained_func.(contained_view_generator, state.contained_metadata)
+    shared_results = op.shared_func.(shared_view_generator, state.shared_metadata)
     return (contained_results, shared_results)
 end
 
-function combine(op::TileOperation, range, metadata, results, tile_idxs; strategy)
+function combine(op::TileOperation, data, range, metadata, results, tile_idxs; strategy)
     return op.combine_func(results, tile_idxs, metadata) # TODO: have several levels of this.
 end

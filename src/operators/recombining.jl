@@ -1,3 +1,5 @@
+export RecombiningTileOperation
+
 """
     RecombiningTileOperation(f)
 
@@ -62,7 +64,9 @@ function combine(op::RecombiningTileOperation, data, range, metadata, results, t
     for (result, tile_idx) in zip(results, tile_idxs)
         current_tile_ranges = tile_to_ranges(strategy, tile_idx)
         ranges_to_assign_to = relevant_range_from_tile_origin(range, current_tile_ranges)
-
+        # WARNING: never use broadcasting here,
+        # since it can break DimArrays that are relying 
+        # on floating point precision in lookups.
         collected_array[ranges_to_assign_to...] = result
     end
     
