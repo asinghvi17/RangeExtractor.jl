@@ -14,10 +14,35 @@ cropped to the `axes` of `array`.
 """
 function crop_ranges_to_array(array::AbstractArray{T, N}, ranges::NTuple{N, <: AbstractUnitRange}) where {N, T}
     array_axes = axes(array)
+    return relevant_range(array_axes, ranges)
+end
+
+
+
+function range_from_tile_origin(tile::TileState, range::NTuple{N, <: AbstractRange}) where N
+    return range_from_tile_origin(tile.tile_ranges, range)
+end
+
+function range_from_tile_origin(tile_ranges::NTuple{N, <: AbstractUnitRange}, ranges::NTuple{N, <: AbstractUnitRange}) where N
     return ntuple(N) do i
-        intersect(array_axes[i], ranges[i])
+        return ranges[i] .- first(tile_ranges[i]) .+ 1
     end
 end
+
+function relevant_range(tile_ranges::Tuple{Vararg{<: AbstractUnitRange}}, ranges::NTuple{N, <: AbstractUnitRange}) where N
+    return ntuple(N) do i
+        return intersect(ranges[i], tile_ranges[i])
+    end
+end
+
+function relevant_range(tile::TileState, range::NTuple{N, <: AbstractRange}) where N
+    return relevant_range(tile.tile_ranges, range)
+end
+
+function relevant_range_from_tile_origin(tile, range::NTuple{N, <: AbstractRange}) where N
+    return range_from_tile_origin(tile, relevant_range(tile, range))
+end
+
 
 """
     _nothing_or_view(x, idx)
@@ -46,6 +71,6 @@ module Static
         value ? True() : False()
     end
     StaticBool(value::StaticBool) = value
-end
+end 
 
 using .Static

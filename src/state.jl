@@ -18,7 +18,7 @@ A struct that holds all the state that is local to a single tile.
 $(FIELDS)
 """
 struct TileState{N, TileType, RangeType <: AbstractUnitRange, RowVecType}
-    "The read data of the tile."
+    "The in-memory data of the tile."
     tile::TileType
     "The ranges that the tile covers in the parent array"
     tile_ranges::NTuple{N, <: RangeType}

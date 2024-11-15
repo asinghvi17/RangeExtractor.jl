@@ -5,6 +5,10 @@ const to = TimerOutput()
 
 using DocStringExtensions, ProgressMeter
 
+include("strategy/abstract.jl")
+include("strategy/fixedgrid.jl")
+include("strategy/rtree.jl")
+
 include("state.jl")
 include("utils.jl")
 
