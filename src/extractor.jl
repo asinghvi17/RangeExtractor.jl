@@ -129,12 +129,12 @@ end
 
 function extract!(
     output::OutType, array::InputArrayType, ranges::AbstractVector{<:NTuple{N, RangeType}}, metadata = nothing; 
-    operation::AbstractTileOperation{C, S},
+    operation::AbstractTileOperation,
     combine::CF,  # Default to taking first result for shared regions
     tiling_scheme::TilingStrategy,
     threaded::Union{Bool, Static.StaticBool} = Static.True(),
     progress = true,
-)::OutType where {OutType <: AbstractVector, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N, C, S, CF}
+)::OutType where {OutType <: AbstractVector, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N, CF}
     # op = TileOperator(operation, array, metadata)
     _extract!(output, Static.StaticBool(threaded), array, ranges, metadata, tiling_scheme, operation, combine, progress)
 
@@ -156,7 +156,7 @@ end
 # Nothing complicated here.
 
 
-function _extract!(output::AbstractVector{OutType}, ::Static.False, array::InputArrayType, ranges::AbstractVector{<:NTuple{N, RangeType}}, metadata, tiling_scheme, op::AbstractTileOperation{C, S}, combine_func::CF, progress::Bool) where {C, S, CF, OutType, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N}  
+function _extract!(output::AbstractVector{OutType}, ::Static.False, array::InputArrayType, ranges::AbstractVector{<:NTuple{N, RangeType}}, metadata, tiling_scheme, op::AbstractTileOperation, combine_func::CF, progress::Bool) where {CF, OutType, InputArrayType <: AbstractArray, RangeType <: AbstractUnitRange, N}  
     if progress
         prog = Progress(length(ranges); desc = "Extracting...")
     end
@@ -216,16 +216,19 @@ function _extract!(output::AbstractVector{OutType}, ::Static.False, array::Input
 
     @debug "Combining shared geometries."
     @timeit to "combining shared geometries" for geom_idx in keys(shared_ranges_indices)
+        geom_metadata = isnothing(metadata) ? nothing : metadata[geom_idx]
+        relevant_tile_idxs = shared_ranges_indices[geom_idx]
         relevant_results = [
             begin
                 relevant_tile_index_in_array = findfirst(==(tile_idx), all_relevant_tiles)
-                relevant_geom_index_in_tile = findfirst(==(geom_idx), shared_ranges[tile_idx])
-                results[relevant_tile_index_in_array][2][relevant_geom_index_in_tile]
-            end for tile_idx in shared_ranges_indices[geom_idx]
+                relevant_geom_index_in_tile_results = findfirst(==(geom_idx), shared_ranges[tile_idx])
+                results[relevant_tile_index_in_array][2][relevant_geom_index_in_tile_results]
+            end for tile_idx in relevant_tile_idxs
         ]
+        final_result_for_shared_range = combine(op, array, ranges[geom_idx], geom_metadata, relevant_results, relevant_tile_idxs; strategy = tiling_scheme)
         push!(
             shared_results,
-            geom_idx => combine_func(relevant_results)
+            geom_idx => final_result_for_shared_range
         )
         progress && next!(prog)
     end
