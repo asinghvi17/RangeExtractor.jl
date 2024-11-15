@@ -11,7 +11,7 @@ using Test, TestItems
 
     tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.RecombiningTileOperation(sum)
     # Test both threaded and non-threaded versions
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
@@ -32,7 +32,7 @@ end
 
     tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.RecombiningTileOperation(sum)
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
@@ -57,7 +57,7 @@ end
 
     tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.RecombiningTileOperation(sum)
     results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
@@ -83,7 +83,7 @@ end
 
     tiling_scheme = FixedGridTiling{3}(5)
 
-    op = RangeExtractor.TileOperation((x, meta) -> sum(x), (x, meta) -> sum(x))
+    op = RangeExtractor.RecombiningTileOperation(sum)
     results_threaded = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
     results_single = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
     expected = [sum(view(data, r...)) for r in ranges]
@@ -105,9 +105,8 @@ end
 
     zonal_values = Rasters.zonal(sum, ras; of = all_countries, boundary = :touches, progress = false, threaded = false)
 
-    op = RangeExtractor.TileOperation(
+    op = RangeExtractor.RecombiningTileOperation(
         (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false), 
-        (x, meta) -> zonal(sum, x, of=meta, boundary = :touches, progress = false, threaded = false)
     )
 
     geoms = all_countries.geometry
@@ -145,24 +144,14 @@ end
         # For things contained in a tile, return the value of the series.
         (x, meta) -> value(fit!(Series(Mean(), KahanSum(), Variance()), x)), 
         # For things shared across tiles, return the series itself, so we can merge them later.
-        (x, meta) -> fit!(Series(Mean(), KahanSum(), Variance()), x)
+        (x, meta) -> fit!(Series(Mean(), KahanSum(), Variance()), x),
+        (results, args...) -> value(foldl(merge!, results))
     )
 
-    # Function to combine results from different tiles
-    function combine_series(series_list)
-        # Extract the first statistic, and an iterator over the rest of them.
-        combined, rest = Iterators.peel(series_list)
-        # Merge the rest into the first.
-        for s in rest
-            merge!(combined, s)
-        end
-        # Return the value of the combined statistic.
-        return value(combined)
-    end
 
-    results_threaded = extract(data, ranges; operation=op, combine=combine_series, 
+    results_threaded = extract(data, ranges; operation=op, combine=identity, 
         tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(data, ranges; operation=op, combine=combine_series, 
+    results_single = extract(data, ranges; operation=op, combine=identity, 
         tiling_scheme=tiling_scheme, threaded=false)
 
     # Calculate expected results directly
