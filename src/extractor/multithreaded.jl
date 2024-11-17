@@ -1,5 +1,5 @@
 
-function _extract!(threaded::Static.True, operator::AbstractTileOperation, dest::AbstractVector, array::AbstractArray, ranges::AbstractVector{<: NTuple{N, AbstractRange}}, metadata::Union{AbstractVector, Nothing} = nothing; strategy, progress = true, kwargs...) where N
+function _extract!(threaded::Multithreaded, operator::AbstractTileOperation, dest::AbstractVector, array::AbstractArray, ranges::AbstractVector{<: NTuple{N, AbstractRange}}, metadata::Union{AbstractVector, Nothing} = nothing; strategy, progress = true, kwargs...) where N
 
 
 function reintegrate_shared_results!()

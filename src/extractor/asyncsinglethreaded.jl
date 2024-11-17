@@ -7,7 +7,7 @@ It extracts ranges from tiles in a single thread, without any parallelism.
 However, shared ranges are processed asynchronously.
 =#
 
-function _extract!(threaded::Serial, operator::AbstractTileOperation, dest::AbstractVector, array::AbstractArray, ranges::AbstractVector{<: NTuple{N, AbstractRange}}, metadata::Union{AbstractVector, Nothing} = nothing; strategy, progress = true, kwargs...) where N
+function _extract!(threaded::AsyncSingleThreaded, operator::AbstractTileOperation, dest::AbstractVector, array::AbstractArray, ranges::AbstractVector{<: NTuple{N, AbstractRange}}, metadata::Union{AbstractVector, Nothing} = nothing; strategy, progress = true, kwargs...) where N
 
     if progress
         prog = Progress(length(ranges); desc = "Extracting...")
@@ -25,14 +25,12 @@ function _extract!(threaded::Serial, operator::AbstractTileOperation, dest::Abst
     end
     @debug """
     RangeExtractor:
-    Running in serial mode.
+    Running in $(threaded) mode.
 
     Using $(length(all_relevant_tiles)) tiles with $(length(ranges)) ranges.  
     
     $(length(ranges) - length(keys(shared_ranges_indices))) ranges were contained within a tile, 
     and $(length(keys(shared_ranges_indices))) ranges were shared across tiles.
-
-
     """
 
 
@@ -47,7 +45,7 @@ function _extract!(threaded::Serial, operator::AbstractTileOperation, dest::Abst
 
     @debug "Processing $(length(all_relevant_tiles)) tiles."
     # For each tile, extract the data and apply the operation.
-    @timeit to "processing tiles" results = map(all_relevant_tiles, each_tile_contained_indices, each_tile_shared_indices, each_tile_contained_metadata, each_tile_shared_metadata) do tile_idx, tile_contained_indices, tile_shared_indices, tile_contained_metadata, tile_shared_metadata
+    @timeit to "processing tiles" results = asyncmap(all_relevant_tiles, each_tile_contained_indices, each_tile_shared_indices, each_tile_contained_metadata, each_tile_shared_metadata) do tile_idx, tile_contained_indices, tile_shared_indices, tile_contained_metadata, tile_shared_metadata
         # @debug "Processing tile $tile_idx."
         @timeit to "reading tile into memory" begin
             tile_ranges = tile_to_ranges(strategy, tile_idx)
