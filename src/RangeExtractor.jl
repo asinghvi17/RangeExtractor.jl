@@ -21,7 +21,8 @@ include("operators/sum.jl")
 include("extractor/extractor.jl")
 include("extractor/allocate_result.jl")
 include("extractor/serial.jl")
-include("extractor/parallel.jl")
+include("extractor/asyncsinglethreaded.jl")
+include("extractor/multithreaded.jl")
 
 export extract
 
