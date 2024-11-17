@@ -1,7 +1,7 @@
 #=
-# Serial extraction
+# Asynchronous, serial extraction
 
-This is the simplest extraction method, and also the reference implementation.
+This is the second simplest extraction method, and also a reference implementation for the channels.
 
 It extracts ranges from tiles in a single thread, without any parallelism.  
 However, shared ranges are processed asynchronously.

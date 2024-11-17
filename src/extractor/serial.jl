@@ -86,7 +86,14 @@ function _extract!(threaded::Serial, operator::AbstractTileOperation, dest::Abst
             end for tile_idx in relevant_tile_idxs
         ]
         final_result_for_shared_range = combine(operator, array, ranges[geom_idx], geom_metadata, relevant_results, relevant_tile_idxs; strategy)
-        dest[geom_idx] = final_result_for_shared_range
+        # @show relevant_results final_result_for_shared_range
+        try
+            dest[geom_idx] = final_result_for_shared_range
+        catch e
+            @warn "Error setting result for geometry $geom_idx."
+            @show final_result_for_shared_range relevant_results relevant_tile_idxs
+            rethrow(e)
+        end
         progress && next!(prog)
     end
 
