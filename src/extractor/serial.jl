@@ -23,7 +23,17 @@ function _extract!(threaded::Static.False, operator::AbstractTileOperation, dest
     shared_only_tiles = setdiff(shared_range_tiles, contained_range_tiles)
     all_relevant_tiles = collect(union(contained_range_tiles, shared_only_tiles))
     end
-    @debug "Using $(length(all_relevant_tiles)) tiles with $(length(ranges)) ranges."
+    @debug """
+    RangeExtractor:
+    Running in serial mode.
+
+    Using $(length(all_relevant_tiles)) tiles with $(length(ranges)) ranges.  
+    
+    $(length(ranges) - length(keys(shared_ranges_indices))) ranges were contained within a tile, 
+    and $(length(keys(shared_ranges_indices))) ranges were shared across tiles.
+
+
+    """
 
 
     _EMPTY_INDEX_VECTOR = Int[]
@@ -42,7 +52,7 @@ function _extract!(threaded::Static.False, operator::AbstractTileOperation, dest
         @timeit to "reading tile into memory" begin
             tile_ranges = tile_to_ranges(strategy, tile_idx)
             tile_ranges = crop_ranges_to_array(array, tile_ranges)
-            @debug "Reading tile $tile_idx into memory."
+            # @debug "Reading tile $tile_idx into memory."
             tile = array[tile_ranges...]
         end
         @timeit to "constructing state" begin
@@ -55,6 +65,7 @@ function _extract!(threaded::Static.False, operator::AbstractTileOperation, dest
             _nothing_or_view(metadata, get(shared_ranges, tile_idx, _EMPTY_INDEX_VECTOR))
         )
         end
+        # Main.Infiltrator.@exfiltrate
         # @debug "Operating on tile $tile_idx."
         @timeit to "operating on tile" begin
         contained_results, shared_results = operator(state)  

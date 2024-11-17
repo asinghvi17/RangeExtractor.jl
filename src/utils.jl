@@ -23,7 +23,7 @@ function range_from_tile_origin(tile::TileState, range::NTuple{N, <: AbstractRan
     return range_from_tile_origin(tile.tile_ranges, range)
 end
 
-function range_from_tile_origin(tile_ranges::NTuple{N, <: AbstractUnitRange}, ranges::NTuple{N, <: AbstractUnitRange}) where N
+function range_from_tile_origin(tile_ranges::Tuple{Vararg{<: AbstractUnitRange}}, ranges::NTuple{N, <: AbstractUnitRange}) where N
     return ntuple(N) do i
         return ranges[i] .- first(tile_ranges[i]) .+ 1
     end

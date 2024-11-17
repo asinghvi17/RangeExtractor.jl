@@ -47,7 +47,7 @@ TileOperation(operation::Function) = TileOperation(contained = operation, shared
 TileOperation(; contained, shared = contained, combine) = TileOperation{typeof(contained), typeof(shared), typeof(combine)}(contained, shared, combine)
 
 function (op::TileOperation)(state::TileState)
-    contained_view_generator = (view(state.tile, r...) for r in state.contained_ranges)
+    contained_view_generator = (view(state.tile, range_from_tile_origin(state, r)...) for r in state.contained_ranges)
     shared_view_generator = (view(state.tile, relevant_range_from_tile_origin(state, r)...) for r in state.shared_ranges)
     contained_results = op.contained_func.(contained_view_generator, state.contained_metadata)
     shared_results = op.shared_func.(shared_view_generator, state.shared_metadata)
