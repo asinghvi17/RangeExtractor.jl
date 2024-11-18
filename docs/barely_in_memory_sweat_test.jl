@@ -107,7 +107,7 @@ end
 Base.parent(d::SlowIODiskArray) = d.data
 
 DA.batchstrategy(d::SlowIODiskArray) = d.batchstrategy
-DA.haschunks(d::SlowIODiskArray) = DA.Chunked()
+DA.haschunks(d::SlowIODiskArray) = DA.Unchunked()
 DA.eachchunk(a::SlowIODiskArray) = DA.GridChunks(a, a.chunksize)
 
 function DA.readblock!(a::SlowIODiskArray, aout, i::DA.OrdinalRange...)
@@ -173,11 +173,12 @@ end
 @be _extract_rangeextractor($full_pop_lazy, $level_shapefiles[2]) seconds=10
 @be _extract_rasters($full_pop_lazy, $level_shapefiles[2]) seconds=10
 
-@be _extract_rangeextractor($full_pop, $level_shapefiles[11]; threaded = false) seconds=10
-@be _extract_rangeextractor($full_pop, $level_shapefiles[11]; threaded = true) seconds=10
+@be _extract_rangeextractor($full_pop, $level_shapefiles[11]; threaded = Serial()) seconds=10
+@be _extract_rangeextractor($full_pop, $level_shapefiles[11]; threaded = AsyncSingleThreaded()) seconds=10
 @be _extract_rasters($full_pop, $level_shapefiles[11]) seconds=10
 
-@be _extract_rangeextractor($full_pop, $level_shapefiles[12]) seconds=10
+@be _extract_rangeextractor($full_pop, $level_shapefiles[12]; threaded = Serial()) seconds=10
+@be _extract_rangeextractor($full_pop, $level_shapefiles[12]; threaded = AsyncSingleThreaded()) seconds=10
 @be _extract_rasters($full_pop, $level_shapefiles[12]) seconds=10
 
 
