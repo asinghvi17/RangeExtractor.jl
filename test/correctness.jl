@@ -9,12 +9,12 @@ using Test, TestItems
         (11:20, 1:10),
     ]
 
-    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
+    strategy = RangeExtractor.FixedGridTiling{2}(10)
 
     op = RangeExtractor.RecombiningTileOperation(sum)
     # Test both threaded and non-threaded versions
-    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    results_threaded = extract(op, array, ranges; strategy=strategy, threaded=true)
+    results_single = extract(op, array, ranges; strategy=strategy, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
 
     @test results_threaded == expected
@@ -30,12 +30,12 @@ end
         (11:20, 11:20) # Contained in bottom-right tile
     ]
 
-    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
+    strategy = RangeExtractor.FixedGridTiling{2}(10)
 
     op = RangeExtractor.RecombiningTileOperation(sum)
-    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
-    expected = [sum(view(array, r...)) for r in ranges]
+    results_threaded = extract(array, ranges; operation=op, combine=sum, strategy=strategy, threaded=true)
+    results_single = extract(array, ranges; operation=op, combine=sum, strategy=strategy, threaded=false)
+    expected = [sum(view(array, r...)) for r in ranges] 
 
     # NOTE: this has to be approximate, since the order of summation is different for the two
     # different approaches.
@@ -55,11 +55,11 @@ end
         (10:20, 10:20),
     ]
 
-    tiling_scheme = RangeExtractor.FixedGridTiling{2}(10)
+    strategy = RangeExtractor.FixedGridTiling{2}(10)
 
     op = RangeExtractor.RecombiningTileOperation(sum)
-    results_threaded = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(array, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    results_threaded = extract(op, array, ranges; strategy=strategy, threaded=true)
+    results_single = extract(op, array, ranges; strategy=strategy, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges]
 
     @test results_threaded ≈ expected
@@ -89,11 +89,11 @@ end
         (6:10, 6:10, 1:5),
     ]
 
-    tiling_scheme = FixedGridTiling{3}(5)
+    strategy = FixedGridTiling{3}(5)
 
     op = RangeExtractor.RecombiningTileOperation(sum)
-    results_threaded = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(data, ranges; operation=op, combine=sum, tiling_scheme=tiling_scheme, threaded=false)
+    results_threaded = extract(op, data, ranges; strategy=strategy, threaded=true)
+    results_single = extract(op, data, ranges; strategy=strategy, threaded=false)
     expected = [sum(view(data, r...)) for r in ranges]
 
     @test results_threaded ≈ expected
@@ -122,10 +122,10 @@ end
     ranges = Rasters.DD.dims2indices.((ras,), Touches.(extents))
     scheme = FixedGridTiling{2}(100)
 
-    tiled_threaded = extract(ras, ranges, all_countries.geometry; 
-        operation=op, combine=sum, tiling_scheme=scheme, threaded=true)
-    tiled_single = extract(ras, ranges, all_countries.geometry; 
-        operation=op, combine=sum, tiling_scheme=scheme, threaded=false)
+    tiled_threaded = extract(op, ras, ranges, all_countries.geometry; 
+         strategy=scheme, threaded=true)
+    tiled_single = extract(op, ras, ranges, all_countries.geometry; 
+         strategy=scheme, threaded=false)
 
     @test tiled_threaded ≈ zonal_values
     @test tiled_single ≈ zonal_values
@@ -137,7 +137,7 @@ end
 
     data = rand(1000, 1000)
     chunk_size = 100
-    tiling_scheme = FixedGridTiling{2}(chunk_size)
+    strategy = FixedGridTiling{2}(chunk_size)
 
     ranges = [
         (1:200, 1:200),
@@ -157,10 +157,10 @@ end
     )
 
 
-    results_threaded = extract(data, ranges; operation=op, combine=identity, 
-        tiling_scheme=tiling_scheme, threaded=true)
-    results_single = extract(data, ranges; operation=op, combine=identity, 
-        tiling_scheme=tiling_scheme, threaded=false)
+    results_threaded = extract(op, data, ranges;
+        strategy=strategy, threaded=true)
+    results_single = extract(op, data, ranges;
+        strategy=strategy, threaded=false)
 
     # Calculate expected results directly
     expected = map(ranges) do r

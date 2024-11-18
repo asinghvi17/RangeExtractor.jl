@@ -86,7 +86,7 @@ end
     results = fetch.(result_tasks)
 
     @debug "Combining shared geometries."
-    @timeit to "combining shared geometries" Threads.@threads for geom_idx in keys(shared_ranges_indices)
+    @timeit to "combining shared geometries" Threads.@threads for geom_idx in collect(keys(shared_ranges_indices))
         geom_metadata = isnothing(metadata) ? nothing : metadata[geom_idx]
         relevant_tile_idxs = shared_ranges_indices[geom_idx]
         relevant_results = [
