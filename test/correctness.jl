@@ -68,6 +68,14 @@ end
     # @test all(abs.(results .- [sum(view(array, r...)) for r in ranges]) .<= eps.(results))
 end
 
+@testitem "Shared across many tiles" tags=[:Correctness, :Base] begin
+end
+
+
+@testitem "Shared broadcasting/correctness bug" tags=[:Correctness, :Base] begin
+    array = rand(20, 20)
+end
+
 @testitem "3D" tags=[:Correctness, :Base] begin
     data = rand(10, 10, 10)
     ranges = [
