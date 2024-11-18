@@ -32,9 +32,8 @@ end
 
     strategy = RangeExtractor.FixedGridTiling{2}(10)
 
-    op = RangeExtractor.RecombiningTileOperation(sum)
-    results_threaded = extract(array, ranges; operation=op, combine=sum, strategy=strategy, threaded=true)
-    results_single = extract(array, ranges; operation=op, combine=sum, strategy=strategy, threaded=false)
+    results_threaded = extract(sum, array, ranges; strategy=strategy, threaded=true)
+    results_single = extract(sum, array, ranges; strategy=strategy, threaded=false)
     expected = [sum(view(array, r...)) for r in ranges] 
 
     # NOTE: this has to be approximate, since the order of summation is different for the two
