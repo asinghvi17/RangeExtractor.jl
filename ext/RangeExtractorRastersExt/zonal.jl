@@ -27,8 +27,13 @@ function Rasters.zonal(f, data::Union{Rasters.AbstractRaster, Rasters.AbstractRa
     callable = ZonalLambda(f, boundary, shape, skipmissing, bylayer)
     # construct a RecombiningTileOperation
     operation = RecombiningTileOperation(callable)
+    zonal(operation, data, strategy; of = of, geometrycolumn = geometrycolumn, boundary = boundary, shape = shape, skipmissing = skipmissing, bylayer = bylayer, kwargs...)
+end
 
-    # now, construct the ranges
+# TODO: should this mask before passing data to the operation?
+# Currently it doesn't.
+function Rasters.zonal(operation::AbstractTileOperation, data::Union{Rasters.AbstractRaster, Rasters.AbstractRasterStack, Rasters.AbstractRasterSeries}, strategy::TilingStrategy; of = nothing, geometrycolumn = nothing, boundary = :center, shape = nothing, skipmissing = true, bylayer = true, kwargs...)
+    # now, construct the ranges from the geometries
     geoms = Rasters._get_geometries(of, geometrycolumn)
     extents = Rasters.GeoInterface.extent.(geoms)
     ranges = Rasters.dims2indices.((data,), Rasters.Touches.(extents))
