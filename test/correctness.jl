@@ -69,6 +69,33 @@ end
 end
 
 @testitem "Shared across many tiles" tags=[:Correctness, :Base] begin
+    array = rand(20, 20)
+    ranges = [(1:10, 1:10),]
+    strategy = FixedGridTiling{2}(5)
+
+    expected = [sum(view(array, r...)) for r in ranges]
+
+    @testset "RecombiningTileOperation" begin
+        op = RecombiningTileOperation(sum)
+
+        results_threaded = extract(op, array, ranges; strategy=strategy, threaded=true)
+        results_single = extract(op, array, ranges; strategy=strategy, threaded=false)
+
+        @test results_threaded ≈ expected
+        @test results_single ≈ expected
+        @test results_threaded ≈ results_single
+    end
+
+    @testset "TileOperation" begin
+        op = RangeExtractor.TileOperation(; contained = sum, shared = sum, combine = (x, useless...) -> sum(x))
+
+        results_threaded = extract(op, array, ranges; strategy=strategy, threaded=true)
+        results_single = extract(op, array, ranges; strategy=strategy, threaded=false)
+
+        @test results_threaded ≈ expected
+        @test results_single ≈ expected
+        @test results_threaded ≈ results_single
+    end
 end
 
 
@@ -108,6 +135,12 @@ end
 
     import RangeExtractor: extract
 
+    set_temp = false
+    if !haskey(ENV, "RASTERDATASOURCES_PATH")
+       ENV["RASTERDATASOURCES_PATH"] = mktempdir()
+       set_temp = true
+    end
+
     ras = Raster(WorldClim{Climate}, :tmin, month=1)
     all_countries = naturalearth("admin_0_countries", 10)
 
@@ -130,6 +163,10 @@ end
     @test tiled_threaded ≈ zonal_values
     @test tiled_single ≈ zonal_values
     @test tiled_threaded ≈ tiled_single
+
+    if set_temp
+        rm(ENV["RASTERDATASOURCES_PATH"])
+    end
 end
 
 @testitem "OnlineStats" tags=[:Correctness, :OnlineStats] begin
