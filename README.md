@@ -22,7 +22,8 @@ using RangeExtractor
 # Create sample array
 array = ones(20, 20)
 
-# Define regions of interest
+# Define regions of interest, as ranges of indices.
+# RangeExtractor only accepts tuples of unit ranges.
 ranges = [
     (1:4, 1:4),
     (9:20, 11:20),
@@ -31,35 +32,36 @@ ranges = [
 ]
 
 # Define tiling scheme (10x10 tiles)
-tiling_scheme = FixedGridTiling{2}(10)
+tiling_strategy = FixedGridTiling{2}(10)
 
-# Define operation to perform on tiles
-op = TileOperation(
-    (x, meta) -> sum(x),  # For regions within a tile
-    (x, meta) -> sum(x)   # For regions spanning tiles
-)
-
-# Extract results
-results = extract(array, ranges; 
-    operation = op,
-    combine = sum,  # How to combine results across tiles
-    tiling_scheme = tiling_scheme
-)
+# Extract results, by invoking `extract` with:
+# - a function that takes an array and returns some value.
+# - a `do` block, which is a convenient way to provide an anonymous function.
+# - a `TileOperation`, which is a more flexible way to provide an operation.
+# here, we use a `do` block to sum the values in each range.
+results = extract(array, ranges; strategy = tiling_strategy) do A
+    sum(A)
+end
 ```
 
 ## Key features
 
-- Flexible tiling schemes: define your own tiling scheme that encodes your knowledge of the data.
 - Multi-threaded, asynchronous processing: extract data from multiple tiles in parallel, and apply the operation to each tile in parallel.
-- Split computations efficiently across tiles
+- Split computations efficiently across tiles, choose whether to materialize the whole range requested or reduce sections by some intermediate product.
+- Flexible tiling schemes: define your own tiling scheme that encodes your knowledge of the data.
 - Completely flexible operations.
 
 ## Generic to any Array
+
+RangeExtractor.jl is designed to be generic to any array type, as long as it supports AbstractArray-like indexing.  
+
+Here's an example of using RangeExtractor.jl to calculate zonal statistics on a raster dataset, using a custom operation.  This is faster single-threaded than Rasters.jl is multithreaded, since it can split computation a
 
 ```julia
 using RangeExtractor
 using Rasters, ArchGDAL
 using RasterDataSources, NaturalEarth
+import GeoInterface as GI
 
 # Load raster dataset
 ras = Raster(WorldClim{Climate}, :tmin, month=1)
@@ -67,31 +69,39 @@ ras = Raster(WorldClim{Climate}, :tmin, month=1)
 # Get country polygons
 countries = naturalearth("admin_0_countries", 10)
 
-extents = GI.extent.(countries.geometry)
-
 # Convert extents to index ranges
-ranges = Rasters.dims2indices.((ras,), Rasters.Touches.(extents))
+ranges = Rasters.dims2indices.((ras,), Rasters.Touches.(GI.extent.(countries.geometry)))
 
 # Define tiling scheme
-tiling_scheme = FixedGridTiling{2}(100)
+strategy = FixedGridTiling{2}(100)
 
-# Define zonal statistics operation
+# Define zonal statistics operation.  
+# Here, we use a `TileOperation` to define a fully custom operation.
+# - `contained` is applied to each range that is fully contained within a tile,
+#   and returns the final result for that range.
+# - `shared` is applied to each range that is partially contained or shared with another tile,
+#   and returns some intermediate result that is stored.
+# - `combine` is applied to the results of all the `shared` operations for a range,
+#   and returns the final result for that range.
 op = TileOperation(
-    (x, meta) -> zonal(sum, x; of=meta),
-    (x, meta) -> zonal(sum, x; of=meta)
+    contained = (x, meta) -> zonal(sum, x; of=meta),
+    shared = (x, meta) -> zonal(sum, x; of=meta),
+    combine = (results, args...) -> sum(results)
 )
 
 # Calculate zonal statistics
-results = RangeExtractor.extract(ras, ranges, countries.geometry;
-    operation = op,
-    combine = sum,
-    tiling_scheme = tiling_scheme
+results = RangeExtractor.extract(
+    op,                  # the operation to perform
+    ras,                 # the raster to extract from
+    ranges,              # the ranges to extract
+    countries.geometry;  # the "metadata" - in this case, the polygons to calculate zonal statistics over
+    strategy = strategy  # the tiling strategy to use
 )
 ```
 
 ## Similar approaches elsewhere
 
-- `exactextract` in R and Python does something similar, but it is forced to keep all vector statistics materialized in memory.  See https://isciences.github.io/exactextract/performance.html#the-raster-sequential-strategy.
+- `exactextract` in R and Python has a somewhat similar strategy for operating on large, out-of-memory rasters, but it is forced to keep all vector statistics materialized in memory.  See https://isciences.github.io/exactextract/performance.html#the-raster-sequential-strategy.  It does not support multithreading, or flexible user-defined operations.
 
 ## Acknowledgements
 
