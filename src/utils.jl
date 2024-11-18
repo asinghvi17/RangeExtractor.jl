@@ -60,6 +60,6 @@ end
 function _append_progress!(p::ProgressMeter.Progress, new_count; options...)
     ProgressMeter.lock_if_threading(p) do
         p.counter += new_count
-        updateProgress!(p; ignore_predictor = false, options...)
+        ProgressMeter.updateProgress!(p; ignore_predictor = false, options...)
     end
 end
