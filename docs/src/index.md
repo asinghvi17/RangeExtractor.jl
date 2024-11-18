@@ -25,10 +25,11 @@ The user also provides some configuration structs:
 - [`TileOperation`](@ref): defines how to process the data in each tile.  
     - There are two potential ways a range can interact with a tile: 
         - Either it is fully contained within the tile (`contained`), 
-        - or it overlaps with the tile and also other tiles (`shared`). 
+        - or it overlaps with the tile and also other tiles (`shared`).
     - The [`TileOperation`](@ref) determines how the data from each tile is combined to form the final result.
-    - The default [`TileOperation`](@ref) allows maximal flexibility but can be slow on the compiler.  We provide several other [`TileOperation`](@ref)s as well, such as the [`RecombiningTileOperation`](@ref) which is a convenience for when the function that the user wants to apply requires the whole tile array to be in-memory at once.  
-    - Users are also free to implement their own [`TileOperation`](@ref)s, so long as they implement the [`AbstractTileOperation`](@ref) interface.
+    - The most generic operation, [`TileOperation`](@ref), allows maximal flexibility but can be slow on the compiler.  
+      We provide specialized [`TileOperation`](@ref)s like [`RecombiningTileOperation`](@ref), which materializes each requested range into memory before applying the function.
+    - Users are also free to implement their own tile operations, so long as they implement the [`AbstractTileOperation`](@ref) interface.
 
 In future, we plan to add tile iteration schemes, so that users can minimize memory or IO usage by defining a specific order to iterate over tiles.  This might involve graph algorithms or other strategies.
 

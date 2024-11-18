@@ -1,4 +1,4 @@
-# Operators
+# Operations
 
 RangeExtractor allows you to configure what the `extract` function does by passing operators.  An operator must:
 - subtype `AbstractTileOperator`

@@ -17,15 +17,18 @@ download_unzip_dir = joinpath(download_dir, "africa_basins")
 
 isfile(download_zip_path) || Downloads.download(africa_basin_zip_file, download_zip_path)
 
-r = ZipFile.Reader(download_zip_path)
+if !isdir(download_unzip_dir)
+    # decompress the zip file
+    r = ZipFile.Reader(download_zip_path)
 
-for f in r.files
-    fn = f.name
-    path = mkpath(joinpath(download_unzip_dir, dirname(fn)))
-    write(joinpath(path, basename(fn)), read(f))
+    for f in r.files
+        fn = f.name
+        path = mkpath(joinpath(download_unzip_dir, dirname(fn)))
+        write(joinpath(path, basename(fn)), read(f))
+    end
+
+    close(r)
 end
-
-close(r)
 
 levels = 1:12
 level_filenames = ["hybas_af_lev$(lpad(l, 2, '0'))_v1c.shp" for l in levels]
@@ -153,7 +156,7 @@ Base.@constprop :aggressive function _extract_rangeextractor(raster, geometries;
     RangeExtractor.extract(
         RangeExtractor.RecombiningTileOperation(zonal_lambda), 
         raster, ranges, geoms; 
-        strategy = FixedGridTiling{2}((1800, 578*3)), 
+        strategy = FixedGridTiling((1800, 578*3)), 
         threaded,
         progress = false
     )

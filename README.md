@@ -51,6 +51,8 @@ end
 - Flexible tiling schemes: define your own tiling scheme that encodes your knowledge of the data.
 - Completely flexible operations.
 
+RangeExtractor.jl also integrates with Rasters.jl, so you can call `Rasters.zonal(f, raster, strategy; of = geoms, ...)` to use RangeExtractor to accelerate your zonal computations.
+
 ## Generic to any Array
 
 RangeExtractor.jl is designed to be generic to any array type, as long as it supports AbstractArray-like indexing.  
