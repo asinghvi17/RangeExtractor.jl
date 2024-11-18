@@ -1,11 +1,9 @@
 using Test, TestItems
 
-@testsnippet SimpleArray begin
-    # Create a simple test array
-    arr = ones(20, 20)
-end
 
-@testitem "FixedGridTiling basic properties" setup=[SimpleArray] tags=[:TilingSchemes] begin
+@testitem "FixedGridTiling basic properties" tags=[:TilingSchemes, :FixedGridTiling] begin
+    arr = ones(20, 20)
+
     using RangeExtractor: FixedGridTiling, get_tile_indices
 
     # Test construction
@@ -31,7 +29,7 @@ end
     @test issetequal(computed_ranges, expected_ranges)
 end
 
-@testitem "FixedGridTiling with uneven dimensions" setup=[SimpleArray] tags=[:TilingSchemes] begin
+@testitem "FixedGridTiling with uneven dimensions" tags=[:TilingSchemes, :FixedGridTiling] begin
     using RangeExtractor: FixedGridTiling, get_tile_indices, tile_to_ranges
     
     # Create array with dimensions not divisible by tile size
@@ -52,7 +50,7 @@ end
         (21:25, 11:15)   # Bottom right
     ]
     
-    computed_ranges = [tile_to_ranges(tiling, tile) for tile in tiles]
+    computed_ranges = [RangeExtractor.relevant_range_from_tile_origin(axes(uneven_arr), tile_to_ranges(tiling, tile)) for tile in tiles]
     
     @test issetequal(computed_ranges, expected_ranges)
 end

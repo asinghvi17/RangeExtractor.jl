@@ -86,7 +86,7 @@ end
     end
 
     @testset "TileOperation" begin
-        op = RangeExtractor.TileOperation(; contained = sum, shared = sum, combine = (x, useless...) -> sum(x))
+        op = RangeExtractor.TileOperation(; contained = (x, meta) -> sum(x), shared = (x, meta) -> sum(x), combine = (x, useless...) -> sum(x))
 
         results_threaded = extract(op, array, ranges; strategy=strategy, threaded=true)
         results_single = extract(op, array, ranges; strategy=strategy, threaded=false)
