@@ -32,7 +32,7 @@ end
 end
 
 @testitem "FixedGridTiling with uneven dimensions" setup=[SimpleArray] tags=[:TilingSchemes] begin
-    using RangeExtractor: FixedGridTiling, get_tiles
+    using RangeExtractor: FixedGridTiling, get_tile_indices, tile_to_ranges
     
     # Create array with dimensions not divisible by tile size
     uneven_arr = ones(25, 15)
