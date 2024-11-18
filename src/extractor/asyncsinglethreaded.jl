@@ -68,7 +68,7 @@ function _extract!(threaded::AsyncSingleThreaded, operator::AbstractTileOperatio
         @timeit to "operating on tile" begin
         contained_results, shared_results = operator(state)  
         end
-        progress && update!(prog, length(contained_results))
+        progress && _append_progress!(prog, length(contained_results))
         contained_results, shared_results
     end
 

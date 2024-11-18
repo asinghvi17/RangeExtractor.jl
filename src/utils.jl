@@ -55,22 +55,11 @@ function _nothing_or_view(x, idx)
     isnothing(x) ? nothing : view(x, idx)
 end
 
-"""
-    module Static
+# ProgressMeter.jl's `update!` implementation sets the counter to the new value.  But I want to add the new value to the current counter.
 
-A simple module that defines a type `StaticBool` that can be used to represent a boolean value at compile time.
-
-Implementation taken from GeometryOps.jl and Rasters.jl before it.  Inspired by Static.jl.
-"""
-module Static
-    export True, False, StaticBool
-    abstract type StaticBool{value} end
-    struct True <: StaticBool{true} end
-    struct False <: StaticBool{false} end
-    function StaticBool(value::Bool)
-        value ? True() : False()
+function _append_progress!(p::ProgressMeter.Progress, new_count; options...)
+    ProgressMeter.lock_if_threading(p) do
+        p.counter += new_count
+        updateProgress!(p; ignore_predictor = false, options...)
     end
-    StaticBool(value::StaticBool) = value
-end 
-
-using .Static
+end
