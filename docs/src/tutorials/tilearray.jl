@@ -40,6 +40,26 @@ tile2inds(t::CartesianIndex{N}, firsts::NTuple{N, Int}, bs) where N = CartesianI
 tile2ind_x(t::Int, first, bs) = UnitRange{Int}(((t - first) * bs + 1):((t - first + 1) * bs))
 tile2ind_y(t::Int, last, bs) = UnitRange{Int}(((last - t) * bs + 1):((last - t + 1) * bs))
 
+# Utils from RangeExtractor.jl
+
+function range_from_tile_origin(tile_ranges::Tuple{Vararg{<: AbstractUnitRange}}, ranges::NTuple{N, <: AbstractUnitRange}) where N
+    return ntuple(N) do i
+        return ranges[i] .- first(tile_ranges[i]) .+ 1
+    end
+end
+
+function relevant_range(tile_ranges::Tuple{Vararg{<: AbstractUnitRange}}, ranges::NTuple{N, <: AbstractUnitRange}) where N
+    return ntuple(N) do i
+        return intersect(ranges[i], tile_ranges[i])
+    end
+end
+
+function relevant_range_from_tile_origin(tile, range::NTuple{N, <: AbstractRange}) where N
+    return range_from_tile_origin(tile, relevant_range(tile, range))
+end
+
+# Methods for TileArray
+
 Base.size(a::TileArray) = size(a.grid.grid) .* a.tilesize
 
 DiskArrays.haschunks(a::TileArray) = DiskArrays.Chunked()
@@ -51,12 +71,14 @@ function DiskArrays.readblock!(A::TileArray{ElType, ProviderType, DownloaderType
 
     needed_tiles = MapTiles.Tile.(inds2tilenums(A, xinds, 1), inds2tilenums(A, yinds, 2)', A.grid.z)
 
-    map(needed_tiles) do tile
-        # first, fetch tile indices
+    asyncmap(needed_tiles; ntasks = 3) do tile
+        # first, fetch tile data
         tile_data = Tyler.fetch_tile(A.provider, A.downloader, tile)
         # compute the indices of the tile in the larger array
         tile_inds = tile2inds(A, tile)
-        # then, fetch the relevant indices
+        # then, compute the relevant indices
+        # if the tile is only partially contained in the array, or vice versa
+        # this is an integer calculation, so not vulnerable to floating point error
         relevant_out_inds = RangeExtractor.relevant_range_from_tile_origin((xinds, yinds), tile_inds.indices)
 
         relevant_tile_inds = RangeExtractor.relevant_range_from_tile_origin(tile_inds.indices, (xinds, yinds))
@@ -64,6 +86,7 @@ function DiskArrays.readblock!(A::TileArray{ElType, ProviderType, DownloaderType
         # debugging code, uncomment if necessary
         # display(image(aftercare(tile_data); axis = (; title = "tile $tile")))
         # @show relevant_out_inds relevant_tile_inds tile_inds
+        
 
         aout[relevant_out_inds...] = aftercare(tile_data)[relevant_tile_inds...]
     end
@@ -73,8 +96,8 @@ aftercare(m::AbstractMatrix{<: Colorant}) = rotr90(m)
 aftercare(m::AbstractMatrix) = m
 aftercare(e::Tyler.ElevationData) = _nan_if_out_of_range.(e.elevation, e.elevation_range...)
 
-function _nan_if_out_of_range(val, min, max)
-    min <= val <= max ? val : NaN
+function _nan_if_out_of_range(val, mini, maxi)
+    (mini <= val <= maxi) ? val : NaN32
 end# clamp.(e.elevation, e.elevation_range...)
 
 
@@ -83,6 +106,9 @@ function DiskArrays.writeblock!(::TileArray, args...)
     error("You can't write to a tile array, since it's a web hosted service!")
 end
 
+
+
+# Tests and examples
 
 # test case
 # fix Tyler API not fully implemented yet
@@ -93,13 +119,12 @@ function Base.showable(::MIME"image/svg+xml", ::TileArray{<: Colors.Colorant})
 end
 
 
-using Colors
 ta = TileArray{RGB{Colors.FixedPointNumbers.N0f8}}(
     TileProviders.Google(),
     Tyler.PathDownloader(joinpath(@__DIR__, "data")),
     MapTiles.TileGrid(MapTiles.Extents.Extent(X = (-180, 180), Y = (-90, 90)), 2, MapTiles.WGS84()),
     256
-)
+);
 
 
 ta_elev = TileArray{Float32}(
@@ -107,35 +132,61 @@ ta_elev = TileArray{Float32}(
     Tyler.PathDownloader(joinpath(@__DIR__, "data")),
     MapTiles.TileGrid(MapTiles.Extents.Extent(X = (-180, 180), Y = (-90, 90)), 2, MapTiles.WGS84()),
     256
-)
+);
+
+
+
+# Rasters.jl integration
 
 import Rasters
 using Rasters: Raster, Projected, X, Y, Intervals, Start
 
-function Raster(provider::Tyler.ElevationProvider, zoom_level::Int, path = mktempdir())
+
+function _generate_tile_array(provider::TileProviders.AbstractProvider, zoom_level, path)
+    grid = MapTiles.TileGrid(MapTiles.Extents.Extent(X = (-180, 180), Y = (-90, 90)), zoom_level, MapTiles.WGS84())
+    array = TileArray{RGB{Colors.FixedPointNumbers.N0f8}}(provider, Tyler.PathDownloader(path), grid, 256)
+end
+
+function _generate_tile_array(provider::Tyler.ElevationProvider, zoom_level, path)
     grid = MapTiles.TileGrid(MapTiles.Extents.Extent(X = (-180, 180), Y = (-90, 90)), zoom_level, MapTiles.WGS84())
     array = TileArray{Float32}(provider, Tyler.PathDownloader(path), grid, 256)
+end
+function Rasters.Raster(provider::Tyler.AbstractProvider, zoom_level::Int, path = mktempdir())
+    
+    array = _generate_tile_array(provider, zoom_level, path)
 
-    tile_bounds = MapTiles.Extents.extent(grid, MapTiles.WebMercator())
-    range_step_x = 
+    tile_bounds = MapTiles.Extents.extent(array.grid, MapTiles.WebMercator())
+
+    size_of_one_pixel = MapTiles.CE / (array.tilesize * 2^array.grid.z)
 
     x = X(
         Projected(
-            LinRange(tile_bounds.X..., size(array, 1)); 
+            StepRangeLen(tile_bounds.X[1], size_of_one_pixel, size(array, 1)); 
             sampling = Intervals(Start()),
-            crs = Rasters.GeoFormatTypes.EPSG(3875),
-            mappedcrs = Rasters.GeoFormatTypes.EPSG(4326),
+            crs = Rasters.GeoFormatTypes.EPSG(3857),
+            # mappedcrs = Rasters.GeoFormatTypes.EPSG(4326),
         )
     )
 
+    # NOTE: y is NOT inverted,
+    # because `aftercare` flips the tile to Julia order.
     y = Y(
         Projected(
-            LinRange(tile_bounds.Y..., size(array, 2)),
+            StepRangeLen(tile_bounds.Y[1], size_of_one_pixel, size(array, 2));
             sampling = Intervals(Start()),
-            crs = Rasters.GeoFormatTypes.EPSG(3875),
-            mappedcrs = Rasters.GeoFormatTypes.EPSG(4326),
+            crs = Rasters.GeoFormatTypes.EPSG(3857),
+            # mappedcrs = Rasters.GeoFormatTypes.EPSG(4326),
         )
     )
 
-    return Raster(array, (x, y); crs = Rasters.GeoFormatTypes.EPSG(4326), mappedcrs = Rasters.GeoFormatTypes.EPSG(3875), missingval = NaN)
+    r = Rasters.Raster(
+        array;
+        dims = (x, y),
+        # mappedcrs = Rasters.GeoFormatTypes.EPSG(4326), 
+        crs = Rasters.GeoFormatTypes.EPSG(3857), 
+        missingval = NaN32,
+    )
 end
+
+
+r1 = Rasters.Raster(Tyler.ElevationProvider(nothing), 16);

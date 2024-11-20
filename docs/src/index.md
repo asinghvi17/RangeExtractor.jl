@@ -6,9 +6,9 @@ CurrentModule = RangeExtractor
 
 Documentation for [RangeExtractor](https://github.com/asinghvi17/RangeExtractor.jl).
 
-# Flow of control
-
 RangeExtractor is designed to efficiently process large arrays by splitting them into manageable tiles and performing operations on each tile independently. This approach is particularly useful when working with arrays that are too large to fit in memory, and for arrays where I/O is a bottleneck (e.g. S3 or cloud hosted arrays).
+
+# What's happening?
 
 ## Inputs
 
@@ -16,6 +16,8 @@ The user provides us three pieces of data:
 - `data`: the array in question, that we want to extract ranges from.
 - `ranges`: the ranges to extract from said array, as a vector of tuples of AbstractUnitRanges.
 - `metadata`: associated metadata for each element in `ranges`.
+
+and an operation, `operation::AbstractTileOperation`, which defines what to do with the data once you have it.
 
 The user also provides some configuration structs:
 
