@@ -6,7 +6,8 @@
 
 **RangeExtractor.jl** is a package for efficiently extracting and operating on subsets of large (out-of-memory) arrays, and is optimized for use with arrays that have very high load time.
 
-<img src="https://github.com/user-attachments/assets/16a5d83b-cebc-47ec-a582-8cc8668aeb46" height=400/>
+<img src="https://github.com/user-attachments/assets/9966cae1-0c19-4db6-92db-e2034975e4d6" height=400/>
+
 
 
 
