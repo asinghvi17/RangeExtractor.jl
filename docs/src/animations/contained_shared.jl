@@ -69,6 +69,6 @@ push!(labels, "Loaded tiles")
 
 leg = Legend(fig[2, 1], plots, labels; orientation = :horizontal, nbanks = 2)
 
-record(fig, joinpath(@__DIR__, "tile_filling_serial.mp4"), 0:length(all_tiles_rects); framerate = 2) do i
+record(fig, joinpath(@__DIR__, "tile_filling_serial.mp4"), 0:length(all_tiles_rects); framerate = 4) do i
     tiles_plot.color[] = vcat(fill((:forestgreen, 0.5), i), fill((:gray, 0.5), length(all_tiles_rects) - i))
 end
