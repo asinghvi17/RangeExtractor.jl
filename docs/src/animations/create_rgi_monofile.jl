@@ -85,6 +85,3 @@ hma_wmerc = GO.reproject(high_mtn_asia_geoms, EPSG(4326), EPSG(3857))
 
 map_poly_plot = poly!(m_elev.axis, hma_wmerc; color = :transparent, strokecolor = :red)
 map_poly_plot.strokewidth = 1
-
-
-
