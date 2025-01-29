@@ -58,7 +58,10 @@ end
 function combine(op::RecombiningTileOperation, data, range, metadata, results, tile_idxs; strategy)
     # Create a zeroed out version of the parent array,
     # viewed at the appropriate indices.
-    collected_array = zero(view(data, range...))
+
+    # see utils.jl for the definition of similar_blank
+    # it's usually equivalent to zero(view(data, range...))
+    collected_array = similar_blank(view(data, range...))
 
     # Populate the array with the results from each tile.
     for (result, tile_idx) in zip(results, tile_idxs)

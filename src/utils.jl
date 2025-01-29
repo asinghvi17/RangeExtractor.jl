@@ -63,3 +63,23 @@ function _append_progress!(p::ProgressMeter.Progress, new_count; options...)
         ProgressMeter.updateProgress!(p; ignore_predictor = false, options...)
     end
 end
+
+
+#=
+## Array utils
+
+Some array types have different ways to encode missings, we need to support that in the extractor!
+=#
+
+"""
+    similar_blank(array::AbstractArray)
+
+Return a new array of the same type as `array`, but with all values set to some "blank" value, depending on the array type.
+
+In general this just returns `zero(array)`, but for some array types (e.g. Rasters), this needs to be a different value (`missingval(array)`).
+
+This is used in the RecombiningTileOperator to create a blank array to store the recombined tiles.
+"""
+function similar_blank(array::AbstractArray)
+    return zero(array)
+end
