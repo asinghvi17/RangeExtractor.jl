@@ -1,5 +1,11 @@
 # Developer Documentation
 
+## Tips for channels and tasks
+
+Tasks have an ~1 microsecond overhead, so the number of tasks should always be minimized (maybe 2*nthreads() is a good number).
+
+Channels are not that bad but should ideally be neither empty nor full for best performance.  In practice this may not really matter though.
+
 ## Testing
 
 This package uses TestItems.jl, a testing framework that allows structuring tests into individual, independent `@testitem` blocks that can be run independently.
