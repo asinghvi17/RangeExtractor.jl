@@ -10,9 +10,12 @@ But they will be approximately accurate.
 struct SumTileOperation <: AbstractTileOperation end
 
 function (op::SumTileOperation)(state::TileState)
-    contained_results = sum.(view.((state.tile,), state.contained_ranges))
+    relevant_contained_ranges = range_from_tile_origin.((state,), state.contained_ranges)
+    contained_results = sum.(view(state.tile, r...) for r in relevant_contained_ranges)
+
     relevant_shared_ranges = relevant_range_from_tile_origin.((state,), state.shared_ranges)
-    shared_results = sum.(view.((state.tile,), relevant_shared_ranges))
+    shared_results = sum.(view(state.tile, r...) for r in relevant_shared_ranges)
+    
     return (contained_results, shared_results)
 end
 
