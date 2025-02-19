@@ -2,5 +2,6 @@
 /docs/Manifest.toml
 /docs/build/
 /docs/src/tutorials/data
+docs/src/animations/plots/
 
 .DS_Store
