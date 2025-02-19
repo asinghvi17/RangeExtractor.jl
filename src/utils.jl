@@ -80,6 +80,6 @@ In general this just returns `zero(array)`, but for some array types (e.g. Raste
 
 This is used in the RecombiningTileOperator to create a blank array to store the recombined tiles.
 """
-function similar_blank(array::AbstractArray)
+function similar_blank(array::AbstractArray{T, N}) where {T, N}
     return zero(array)
 end
