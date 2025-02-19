@@ -5,11 +5,14 @@ using Extents
 import GeoFormatTypes as GFT, GeometryOps as GO, 
 CoordinateTransformations as CT, GeoInterface as GI,
 GeoJSON as GeoJSON # geospatial stuff to plot polygons
+import WellKnownGeometry
 using CairoMakie # plotting
 using LinearAlgebra
 
+plotsdir() = joinpath(@__DIR__, "plots")
+
 function scale_to_extent(geom, dest::Extent)
-    source = GI.extent(geom)
+    source = GI.extent(geom; fallback = true)
 
     source_widths = (source.X[2] - source.X[1], source.Y[2] - source.Y[1])
     dest_widths = (dest.X[2] - dest.X[1], dest.Y[2] - dest.Y[1])
@@ -75,22 +78,22 @@ ax.ygridcolor[] = :black
 
 ax.aspect[] = DataAspect()
 
-g1 = poly!(ax, [geoms[1], geoms[2]]; color = Makie.Cycled(1), alpha = 0.5, label = "Fully contained in tile")
-g2 = poly!(ax, geoms[3]; color = Makie.Cycled(2), alpha = 0.5, label = "Shared between 2 tiles")
-g3 = poly!(ax, geoms[4]; color = Makie.Cycled(3), alpha = 0.5, label = "Shared between 8 tiles")
+g1 = poly!(ax, [geoms[1], geoms[2]]; color = Makie.Cycled(1), alpha = 0.7, label = "Fully contained in tile")
+g2 = poly!(ax, geoms[3]; color = Makie.Cycled(2), alpha = 0.7, label = "Shared between 2 tiles")
+g3 = poly!(ax, geoms[4]; color = Makie.Cycled(3), alpha = 0.7, label = "Shared between 8 tiles")
 
 leg = Legend(fig[2, 1], ax; orientation = :horizontal, nbanks = 2)
 
-save(joinpath(@__DIR__, "initial_geometries.svg"), fig)
-save(joinpath(@__DIR__, "initial_geometries.png"), fig; px_per_unit = 2)
+save(joinpath(plotsdir(), "initial_geometries.svg"), fig)
+save(joinpath(plotsdir(), "initial_geometries.png"), fig; px_per_unit = 2)
 
 p1 = poly!(ax, [ranges_rects[1], ranges_rects[2]]; color = Makie.Cycled(1), alpha = 0.4)
 p2 = poly!(ax, ranges_rects[3]; color = Makie.Cycled(2), alpha = 0.4)
 p3 = poly!(ax, ranges_rects[4]; color = Makie.Cycled(3), alpha = 0.4)
 
 
-save(joinpath(@__DIR__, "contained_shared_ranges.svg"), fig)
-save(joinpath(@__DIR__, "contained_shared_ranges.png"), fig; px_per_unit = 2)
+save(joinpath(plotsdir(), "contained_shared_ranges.svg"), fig)
+save(joinpath(plotsdir(), "contained_shared_ranges.png"), fig; px_per_unit = 2)
 ##############
 
 tiles_plot = poly!(ax, all_tiles_rects; color = fill((:gray, 0.5), length(all_tiles_rects)), alpha = 0.5, label = "All tiles to be loaded")
@@ -100,8 +103,8 @@ leg = Legend(fig[2, 1], ax; orientation = :horizontal, nbanks = 3)
 
 fig
 
-save(joinpath(@__DIR__, "applicable_tiles.svg"), fig)
-save(joinpath(@__DIR__, "applicable_tiles.png"), fig; px_per_unit = 2)
+save(joinpath(plotsdir(), "applicable_tiles.svg"), fig)
+save(joinpath(plotsdir(), "applicable_tiles.png"), fig; px_per_unit = 2)
 
 delete!(leg)
 
@@ -114,13 +117,13 @@ push!(labels, "Loaded tiles")
 
 leg = Legend(fig[2, 1], plots, labels; orientation = :horizontal, nbanks = 3)
 
-record(fig, joinpath(@__DIR__, "tile_filling_serial.mp4"), 0:length(all_tiles_rects); framerate = 4) do i
+record(fig, joinpath(plotsdir(), "tile_filling_serial.mp4"), 0:length(all_tiles_rects); framerate = 4) do i
     tiles_plot.color[] = vcat(fill((:forestgreen, 0.5), i), fill((:gray, 0.5), length(all_tiles_rects) - i))
 end
 
 resize!(fig.scene, (400, 500))
 
-record(fig, joinpath(@__DIR__, "tile_filling_serial_for_README.gif"), 0:length(all_tiles_rects); framerate = 4, px_per_unit = 2) do i
+record(fig, joinpath(plotsdir(), "tile_filling_serial_for_README.gif"), 0:length(all_tiles_rects); framerate = 4, px_per_unit = 2) do i
     tiles_plot.color[] = vcat(fill((:forestgreen, 0.5), i), fill((:gray, 0.5), length(all_tiles_rects) - i))
 end
 
