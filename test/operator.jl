@@ -20,7 +20,10 @@ end
     )
     
     # Test operation that sums elements
-    op = TileOperation(; contained = (data, _) -> sum(data), combine = (x, useless...) -> sum(x))
+    op = TileOperation(; 
+        contained = (data, _) -> sum(data), 
+        shared = (data, _) -> sum(data),
+        combine = (x, useless...) -> sum(x))
     contained_results, shared_results = op(state)
     
     @test length(contained_results) == 1

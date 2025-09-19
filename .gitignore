@@ -5,3 +5,8 @@
 docs/src/animations/plots/
 
 .DS_Store
+talks/cajun-25/kerchunk/pixi.lock
+
+talks/cajun-25/kerchunk/pixi.toml
+
+talks/cajun-25/vrt/copernicus_30m_local.vrt
