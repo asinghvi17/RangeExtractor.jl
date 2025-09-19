@@ -132,3 +132,34 @@ end
 # MakieDraw segfaults, we might need to re-write it to be a bit less annoying
 
 # for now, I used mapshaper to create geojson
+
+
+# RangeExtractor syntax
+
+using RangeExtractor
+
+# This is the source array that we will tile.
+array = (+).(1:100, (1:100)')
+
+# This is the tiling strategy that we will use - dividing the array into chunks of 10x10 elements each.
+strategy = FixedGridTiling((10, 10))
+
+# These are the ranges that we are concerned with.
+ranges = [
+    (22:28, 22:28),
+    (81:90, 81:90),
+    (62:68, 42:52),
+    (22:62, 62:72)
+]
+
+RangeExtractor.extract(array, ranges; strategy) do data
+    # @show size(data)
+    # f, a, p = heatmap(data)
+    # Colorbar(f[1, 2], p)
+    # display(f)
+    size(data)
+end
+
+using DimensionalData
+
+array = @d X(1:100) .+ Y(1:100)

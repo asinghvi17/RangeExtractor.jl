@@ -28,6 +28,8 @@ struct FixedGridTiling{N} <: TilingStrategy
 end
 
 FixedGridTiling{N}(tilesize::Int) where N = FixedGridTiling{N}(ntuple(_ -> tilesize, N))
+FixedGridTiling(tilesize::Int...) = FixedGridTiling(tilesize)
+
 
 indextype(::Type{FixedGridTiling{N}}) where N = CartesianIndex{N}
 

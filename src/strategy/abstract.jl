@@ -32,10 +32,10 @@ function tile_to_ranges(tiling::TilingStrategy, index::CartesianIndex{N2}) where
     error("Not implemented for tiling strategy $tiling")
 end
 
-function split_ranges_into_tiles(tiling::TilingStrategy, ranges::NTuple{N, RangeType}, metadata::MetadataType) where {N, RangeType <: AbstractUnitRange, MetadataType}
+function split_ranges_into_tiles(tiling::TilingStrategy, ranges::AbstractVector{<: NTuple{N, RangeType}}, metadata::AbstractVector{MetadataType}) where {N, RangeType <: AbstractUnitRange, MetadataType}
     split_ranges_into_tiles(tiling, ranges)
 end
 
-function split_ranges_into_tiles(tiling::TilingStrategy, ranges::NTuple{N, RangeType}) where {N, RangeType <: AbstractUnitRange}
+function split_ranges_into_tiles(tiling::TilingStrategy, ranges::AbstractVector{<: NTuple{N, RangeType}}) where {N, RangeType <: AbstractUnitRange}
     error("Not implemented for tiling strategy $tiling")
 end

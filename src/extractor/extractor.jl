@@ -7,6 +7,14 @@ This file contains the main API for the extractor.
 export extract, extract!
 export AbstractConcurrencyStrategy, Serial, AsyncSingleThreaded, Multithreaded
 
+"""
+    abstract type AbstractConcurrencyStrategy
+
+An abstract type that specifies the concurrency strategy to use.
+
+The default strategy is [`Serial()`](@ref).  There is also [`AsyncSingleThreaded()`](@ref) and [`Multithreaded()`](@ref).
+We also aim to add a Dagger executor at some point!
+"""
 abstract type AbstractConcurrencyStrategy end
 
 """
